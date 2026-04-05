@@ -29,10 +29,12 @@ async function gql<T = unknown>(query: string, variables: Record<string, unknown
 // -- Issues -------------------------------------------------------------------
 
 export async function listIssues(q?: string, limit = 50) {
-  const filter = q ? `, filter: { or: [{ title: { containsIgnoreCase: "${q}" } }, { description: { containsIgnoreCase: "${q}" } }] }` : "";
+  const filter = q
+    ? { or: [{ title: { containsIgnoreCase: q } }, { description: { containsIgnoreCase: q } }] }
+    : undefined;
   return gql(`
-    query {
-      issues(first: ${limit}${filter}, orderBy: updatedAt) {
+    query($first: Int!, $filter: IssueFilter) {
+      issues(first: $first, filter: $filter, orderBy: updatedAt) {
         nodes {
           id
           identifier
@@ -48,7 +50,7 @@ export async function listIssues(q?: string, limit = 50) {
         }
       }
     }
-  `);
+  `, { first: limit, ...(filter ? { filter } : {}) });
 }
 
 export async function getIssue(id: string) {

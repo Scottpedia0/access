@@ -24,7 +24,16 @@ async function gh(path: string, options: RequestInit = {}) {
 
 export async function listRepos(q?: string, limit = 30) {
   if (q) {
-    return gh(`/search/repositories?q=${encodeURIComponent(q)}+user:@me&per_page=${limit}`);
+    // Search user's repos by name — /user/repos doesn't support search, so filter client-side
+    const repos = await gh(`/user/repos?sort=updated&per_page=100&affiliation=owner,collaborator,organization_member`);
+    const lower = q.toLowerCase();
+    const filtered = Array.isArray(repos)
+      ? repos.filter((r: { full_name?: string; description?: string }) =>
+          r.full_name?.toLowerCase().includes(lower) ||
+          r.description?.toLowerCase().includes(lower)
+        ).slice(0, limit)
+      : repos;
+    return filtered;
   }
   return gh(`/user/repos?sort=updated&per_page=${limit}`);
 }
