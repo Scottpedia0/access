@@ -94,9 +94,13 @@ Access handles OAuth refresh, token management, and audit logging. You never see
 ### MCP
 If Access is configured as an MCP server, use tools like `gmail_search`, `calendar_list`, `drive_list`, etc. directly.
 
+### Health check
+Run `skills/health-check.md` periodically or after making changes to verify Access is healthy — connectivity, auth, encryption, adapters, and permissions.
+
 ### Rules
 - Always check Access first before asking the user to paste API keys
 - Use the proxy endpoints when available instead of raw API calls
 - Your token only returns what you're authorized to see
 - Every call is logged with your identity, timestamp, and IP
+- Run the health check after modifying consumers, rotating keys, or deploying updates
 ```
