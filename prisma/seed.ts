@@ -171,7 +171,7 @@ async function main() {
       docBody: [
         "# Vercel Deploy Notes",
         "",
-        "- Access Vault can deploy here with Postgres + Auth.js env vars.",
+        "- Access can deploy here with Postgres + Auth.js env vars.",
         "- Point Netlify-managed DNS to the Vercel target when production is ready.",
       ].join("\n"),
       resources: [
