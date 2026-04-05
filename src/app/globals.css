@@ -1,0 +1,296 @@
+@import "tailwindcss";
+
+:root {
+  /* Brand foundation */
+  --background: #f5ede0;
+  --surface: rgba(255, 251, 245, 0.84);
+  --surface-strong: #fffaf2;
+  --surface-soft: rgba(255, 248, 240, 0.76);
+  --surface-inverse: #1d1712;
+  --foreground: #18120d;
+  --text-body: #3d342e;
+  --muted: #6b6057;
+  --muted-soft: #8e8176;
+  --border: rgba(117, 93, 70, 0.16);
+  --border-strong: rgba(117, 93, 70, 0.28);
+  --accent: #b25222;
+  --accent-strong: #8e3d14;
+  --accent-soft: rgba(210, 132, 74, 0.16);
+  --accent-border: rgba(178, 82, 34, 0.35);
+  --accent-ink: #8e3d14;
+  --success-soft: #e6f3ea;
+  --success-border: #b8d8c2;
+  --success-ink: #1e6b42;
+  --warning-soft: #fff1da;
+  --warning-border: #f0c989;
+  --warning-ink: #8f5d0d;
+  --danger-soft: #fce8e8;
+  --danger-border: #efb8b8;
+  --danger-ink: #9b3333;
+  --shadow-soft: 0 20px 60px -40px rgba(68, 36, 16, 0.5);
+  --shadow-card: 0 18px 50px -40px rgba(70, 36, 18, 0.45);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), sans-serif;
+  background-image:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.72), transparent 34%),
+    radial-gradient(circle at bottom right, rgba(234, 197, 153, 0.45), transparent 32%),
+    linear-gradient(180deg, #f7efe4 0%, #f1e4d1 100%);
+  min-height: 100vh;
+}
+
+a {
+  text-decoration: none;
+}
+
+::selection {
+  background: rgba(178, 82, 34, 0.16);
+}
+
+.app-kicker {
+  color: var(--muted);
+}
+
+.app-text-muted {
+  color: var(--muted);
+}
+
+.app-panel {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(18px);
+}
+
+.app-panel-subtle {
+  border: 1px solid rgba(117, 93, 70, 0.12);
+  background: var(--surface-soft);
+}
+
+.app-panel-subtle-hover {
+  transition:
+    transform 140ms ease,
+    border-color 140ms ease,
+    background-color 140ms ease;
+}
+
+.app-panel-subtle-hover:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-strong);
+  background: var(--surface-strong);
+}
+
+.app-shell-header {
+  border: 1px solid var(--border);
+  background: rgba(255, 251, 245, 0.76);
+  box-shadow: 0 26px 70px -45px rgba(70, 36, 18, 0.45);
+  backdrop-filter: blur(18px);
+}
+
+.app-stat-card {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.app-button-primary {
+  background: var(--surface-inverse);
+  color: #f9f4ed;
+  transition:
+    background-color 140ms ease,
+    color 140ms ease,
+    transform 140ms ease;
+}
+
+.app-button-primary:hover {
+  background: #2a221c;
+}
+
+.app-button-secondary {
+  border: 1px solid var(--border-strong);
+  background: rgba(255, 255, 255, 0.76);
+  color: var(--text-body);
+  transition:
+    background-color 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease;
+}
+
+.app-button-secondary:hover {
+  border-color: rgba(117, 93, 70, 0.34);
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--foreground);
+}
+
+.app-nav-pill {
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--text-body);
+  transition:
+    background-color 140ms ease,
+    color 140ms ease,
+    box-shadow 140ms ease,
+    border-color 140ms ease;
+}
+
+.app-nav-pill:hover {
+  border-color: var(--border);
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--foreground);
+}
+
+.app-nav-pill-active {
+  background: var(--surface-inverse);
+  color: #f9f4ed;
+  box-shadow: 0 14px 32px -24px rgba(29, 23, 18, 0.9);
+}
+
+.app-code-chip {
+  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--foreground);
+}
+
+.app-code-block {
+  border-radius: 1rem;
+  background: var(--surface-inverse);
+  color: #f8f1e7;
+}
+
+.app-link-strong {
+  color: var(--foreground);
+  text-decoration: underline;
+  text-decoration-color: rgba(117, 93, 70, 0.28);
+  text-underline-offset: 0.22rem;
+  transition: text-decoration-color 140ms ease;
+}
+
+.app-link-strong:hover {
+  text-decoration-color: var(--foreground);
+}
+
+.app-badge {
+  border-width: 1px;
+}
+
+.app-badge-neutral {
+  border-color: rgba(117, 93, 70, 0.24);
+  background: rgba(255, 255, 255, 0.66);
+  color: var(--text-body);
+}
+
+.app-badge-accent {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.app-badge-success {
+  border-color: var(--success-border);
+  background: var(--success-soft);
+  color: var(--success-ink);
+}
+
+.app-badge-warning {
+  border-color: var(--warning-border);
+  background: var(--warning-soft);
+  color: var(--warning-ink);
+}
+
+.app-badge-danger {
+  border-color: var(--danger-border);
+  background: var(--danger-soft);
+  color: var(--danger-ink);
+}
+
+.field {
+  width: 100%;
+  border-radius: 1.35rem;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--foreground);
+  outline: none;
+  padding: 0.9rem 1rem;
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.field:focus {
+  border-color: rgba(178, 82, 34, 0.72);
+  box-shadow: 0 0 0 4px rgba(178, 82, 34, 0.14);
+}
+
+.field::placeholder {
+  color: rgba(107, 96, 87, 0.8);
+}
+
+.markdown-body {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4 {
+  color: var(--foreground);
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+.markdown-body h1 {
+  font-size: 1.55rem;
+}
+
+.markdown-body h2 {
+  font-size: 1.25rem;
+}
+
+.markdown-body h3 {
+  font-size: 1.05rem;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 1.3rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.markdown-body code {
+  border-radius: 0.55rem;
+  background: rgba(24, 18, 13, 0.08);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.92em;
+  padding: 0.15rem 0.35rem;
+}
+
+.markdown-body pre {
+  overflow-x: auto;
+  border-radius: 1rem;
+  background: #1c1713;
+  color: #f7efe4;
+  padding: 1rem;
+}
+
+.markdown-body pre code {
+  background: transparent;
+  padding: 0;
+}
+
+.markdown-body blockquote {
+  border-left: 3px solid rgba(178, 82, 34, 0.45);
+  padding-left: 1rem;
+  color: var(--muted);
+}
+
+.markdown-body a {
+  color: var(--accent-strong);
+  text-decoration: underline;
+  text-decoration-color: rgba(178, 82, 34, 0.28);
+  text-underline-offset: 0.18rem;
+}

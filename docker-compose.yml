@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: access_moran_bot
+      POSTGRES_USER: access
+      POSTGRES_PASSWORD: access_local
+    ports:
+      - "5432:5432"
+    volumes:
+      - access_moran_bot_data:/var/lib/postgresql/data
+
+volumes:
+  access_moran_bot_data:
