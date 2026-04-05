@@ -240,6 +240,15 @@ Each proxy adapter is a Next.js route handler under `src/app/api/v1/<service>/ro
 
 Most adapters are under 100 lines. See `src/app/api/v1/hubspot/route.ts` for a clean example.
 
+## Agent Instructions
+
+`AGENTS.md` in this repo has two sections:
+
+1. **For agents developing on Access** — architecture, patterns, data model, commands
+2. **For agents using Access** — a ready-to-paste block for your `CLAUDE.md` or agent instructions that tells your agents how to bootstrap, pull credentials, and use proxy endpoints
+
+Copy the "For agents USING Access" section into your agent's instruction file and set `ACCESS_BASE_URL` and `ACCESS_TOKEN` in your environment.
+
 ## MCP Server
 
 Access includes an MCP server (`mcp-server.mjs`) that exposes Google Workspace tools via stdio transport. Works with any MCP-compatible client.
