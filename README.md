@@ -3,7 +3,7 @@
 > "It's kind of a nifty little utility."
 > — me
 >
-> Once in a while you need to remind an agent it exists when they say they can't access something. 
+>Once in a while, an agent needs to be reminded that this exists.
 
 > Everything below this line was drafted by the bots.
 
