@@ -138,9 +138,9 @@ export async function POST(request: NextRequest) {
           {
             summary: data.summary,
             description: data.description,
-            start: data.start as unknown as { dateTime: string; timeZone?: string },
-            end: data.end as unknown as { dateTime: string; timeZone?: string },
-            attendees: data.attendees as { email: string; displayName?: string; optional?: boolean; responseStatus?: string }[],
+            start: data.start,
+            end: data.end,
+            attendees: data.attendees,
             location: data.location,
           },
           data.calendarId
@@ -155,8 +155,8 @@ export async function POST(request: NextRequest) {
           {
             summary: data.summary,
             description: data.description,
-            start: data.start as unknown as { dateTime: string; timeZone?: string } | undefined,
-            end: data.end as unknown as { dateTime: string; timeZone?: string } | undefined,
+            start: data.start,
+            end: data.end,
             location: data.location,
           },
           data.calendarId

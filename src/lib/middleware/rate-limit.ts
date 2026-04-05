@@ -22,6 +22,17 @@
 export const RATE_LIMIT_ENABLED =
   process.env.RATE_LIMIT_ENABLED?.toLowerCase() !== "false";
 
+if (!RATE_LIMIT_ENABLED) {
+  console.warn(
+    JSON.stringify({
+      level: "warn",
+      event: "rate_limit_disabled",
+      message: "Rate limiting is disabled (RATE_LIMIT_ENABLED=false). Auth and API endpoints are unprotected from brute force. Set up Upstash Redis for production rate limiting.",
+      timestamp: new Date().toISOString(),
+    })
+  );
+}
+
 type BucketEntry = {
   timestamps: number[];
 };

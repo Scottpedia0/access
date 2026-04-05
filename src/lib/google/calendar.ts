@@ -73,9 +73,9 @@ export async function createEvent(
   event: {
     summary: string;
     description?: string;
-    start: { dateTime: string; timeZone?: string };
-    end: { dateTime: string; timeZone?: string };
-    attendees?: { email: string }[];
+    start: { dateTime?: string; date?: string; timeZone?: string };
+    end: { dateTime?: string; date?: string; timeZone?: string };
+    attendees?: { email: string; displayName?: string; optional?: boolean; responseStatus?: string }[];
     location?: string;
   },
   calendarId = "primary"
@@ -94,8 +94,8 @@ export async function updateEvent(
   updates: {
     summary?: string;
     description?: string;
-    start?: { dateTime: string; timeZone?: string };
-    end?: { dateTime: string; timeZone?: string };
+    start?: { dateTime?: string; date?: string; timeZone?: string };
+    end?: { dateTime?: string; date?: string; timeZone?: string };
     location?: string;
   },
   calendarId = "primary"
