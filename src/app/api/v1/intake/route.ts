@@ -3,6 +3,8 @@ import { z } from "zod";
 
 import { submitSharedIntake } from "@/lib/intake";
 
+export const runtime = "nodejs";
+
 const requestSchema = z.object({
   intakeToken: z.string().optional(),
   serviceName: z.string().min(2),

@@ -10,6 +10,8 @@ import {
   deleteEvent,
 } from "@/lib/google/calendar";
 
+export const runtime = "nodejs";
+
 const getSchema = z.object({
   action: z.enum(["calendars", "events", "event"]).default("events"),
   calendarId: z.string().optional(),
@@ -20,6 +22,20 @@ const getSchema = z.object({
   eventId: z.string().min(1).optional(),
 });
 
+/** Google Calendar event datetime: either { dateTime } or { date }, with optional timeZone. */
+const eventDateTimeSchema = z.object({
+  dateTime: z.string().optional(),
+  date: z.string().optional(),
+  timeZone: z.string().optional(),
+}).refine(d => d.dateTime || d.date, { message: "Either dateTime or date is required" });
+
+const attendeeSchema = z.object({
+  email: z.string().min(1),
+  displayName: z.string().optional(),
+  optional: z.boolean().optional(),
+  responseStatus: z.string().optional(),
+});
+
 const postSchema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("create"),
@@ -27,9 +43,9 @@ const postSchema = z.discriminatedUnion("action", [
     calendarId: z.string().optional(),
     summary: z.string().min(1),
     description: z.string().optional(),
-    start: z.any(),
-    end: z.any(),
-    attendees: z.array(z.any()).optional(),
+    start: eventDateTimeSchema,
+    end: eventDateTimeSchema,
+    attendees: z.array(attendeeSchema).optional(),
     location: z.string().optional(),
   }),
   z.object({
@@ -39,8 +55,8 @@ const postSchema = z.discriminatedUnion("action", [
     eventId: z.string().min(1),
     summary: z.string().optional(),
     description: z.string().optional(),
-    start: z.any().optional(),
-    end: z.any().optional(),
+    start: eventDateTimeSchema.optional(),
+    end: eventDateTimeSchema.optional(),
     location: z.string().optional(),
   }),
   z.object({
@@ -122,9 +138,9 @@ export async function POST(request: NextRequest) {
           {
             summary: data.summary,
             description: data.description,
-            start: data.start,
-            end: data.end,
-            attendees: data.attendees,
+            start: data.start as unknown as { dateTime: string; timeZone?: string },
+            end: data.end as unknown as { dateTime: string; timeZone?: string },
+            attendees: data.attendees as { email: string; displayName?: string; optional?: boolean; responseStatus?: string }[],
             location: data.location,
           },
           data.calendarId
@@ -139,8 +155,8 @@ export async function POST(request: NextRequest) {
           {
             summary: data.summary,
             description: data.description,
-            start: data.start,
-            end: data.end,
+            start: data.start as unknown as { dateTime: string; timeZone?: string } | undefined,
+            end: data.end as unknown as { dateTime: string; timeZone?: string } | undefined,
             location: data.location,
           },
           data.calendarId

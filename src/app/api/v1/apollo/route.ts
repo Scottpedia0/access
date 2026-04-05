@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { isValidGlobalAgentToken } from "@/lib/env";
 
+export const runtime = "nodejs";
+
 const APOLLO_BASE = "https://api.apollo.io/v1";
 const APOLLO_KEY = process.env.APOLLO_API_KEY;
 

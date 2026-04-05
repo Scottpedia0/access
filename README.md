@@ -1,6 +1,6 @@
 # Access
 
-Self-hosted credential vault + API proxy for AI agents.
+Self-hosted secret, context, and bootstrap service for agents and scripts.
 
 One Bearer token, all your services. Your agents never touch OAuth tokens, API keys, or auth flows.
 
@@ -170,36 +170,135 @@ Add to `.gemini/settings.json`:
 }
 ```
 
+### Cursor
+
+Add to your Cursor MCP settings:
+
+```json
+{
+  "mcpServers": {
+    "access": {
+      "command": "node",
+      "args": ["/path/to/access/mcp-server.mjs"],
+      "env": {
+        "ACCESS_BASE_URL": "http://localhost:3000",
+        "GLOBAL_AGENT_TOKEN": "your-token-here"
+      }
+    }
+  }
+}
+```
+
+### Windsurf
+
+Same config pattern as Cursor -- add to Windsurf's MCP settings:
+
+```json
+{
+  "mcpServers": {
+    "access": {
+      "command": "node",
+      "args": ["/path/to/access/mcp-server.mjs"],
+      "env": {
+        "ACCESS_BASE_URL": "http://localhost:3000",
+        "GLOBAL_AGENT_TOKEN": "your-token-here"
+      }
+    }
+  }
+}
+```
+
+### VS Code (GitHub Copilot)
+
+Add to `.vscode/mcp.json` in your project:
+
+```json
+{
+  "servers": {
+    "access": {
+      "command": "node",
+      "args": ["/path/to/access/mcp-server.mjs"],
+      "env": {
+        "ACCESS_BASE_URL": "http://localhost:3000",
+        "GLOBAL_AGENT_TOKEN": "your-token-here"
+      }
+    }
+  }
+}
+```
+
 ### Codex / Any MCP Client
 
-Same config pattern — the server uses stdio transport. Set `GLOBAL_AGENT_TOKEN` and `ACCESS_BASE_URL` as environment variables, point the command at `mcp-server.mjs`.
+Same config pattern -- the server uses stdio transport. Set `GLOBAL_AGENT_TOKEN` and `ACCESS_BASE_URL` as environment variables, point the command at `mcp-server.mjs`.
 
 Once connected, your agent gets tools like `gmail_search`, `calendar_list`, `drive_list`, `contacts_search`, and more — all authenticated through the vault.
 
 ## Architecture
 
-```
-Agent (Claude Code, Codex, scripts, etc.)
-  |
-  |  Bearer Token
-  v
-Access (Next.js)
-  |
-  |-- /api/v1/google/*  -->  OAuth 2.0  -->  Google APIs
-  |-- /api/v1/hubspot   -->  API Key    -->  HubSpot API
-  |-- /api/v1/slack     -->  Bot Token  -->  Slack API
-  |-- /api/v1/bootstrap -->  (returns all secrets as env vars)
-  |
-  +-- Prisma/Postgres (encrypted secrets, tokens, audit log)
+```mermaid
+flowchart LR
+    subgraph Agents
+        A1[Claude Code]
+        A2[Cursor]
+        A3[Gemini CLI]
+        A4[Codex]
+        A5[Custom scripts]
+    end
+
+    subgraph Access["Access (Next.js)"]
+        direction TB
+        MW[Middleware\nRate limit · Body limit · Auth]
+        PROXY[Proxy Routes\n/api/v1/*]
+        AUTH[Token Auth\nGlobal · Consumer · Intake]
+        VAULT[(Postgres\nEncrypted secrets\nOAuth tokens\nAudit log)]
+        MW --> PROXY
+        PROXY --> AUTH
+        AUTH --> VAULT
+    end
+
+    subgraph Services
+        G[Google APIs\nGmail · Calendar · Drive\nSheets · Docs · Contacts]
+        H[HubSpot]
+        S[Slack]
+        CF[Cloudflare]
+        MORE[+ 5 more]
+    end
+
+    A1 & A2 & A3 & A4 & A5 -->|Bearer Token| MW
+    PROXY -->|OAuth 2.0\ntoken refresh| G
+    PROXY -->|API Key| H
+    PROXY -->|Bot Token| S
+    PROXY -->|API Token| CF
+    PROXY -->|Various| MORE
 ```
 
-Key design principles:
+### How a request flows
+
+```
+1. Agent sends:     GET /api/v1/google/gmail?action=search&q=from:alice&account=work
+                    Authorization: Bearer amb_live_xxxx
+
+2. Middleware:       Rate limit check → Body size check → Pass
+
+3. Auth:            Validate Bearer token (HMAC comparison)
+                    Look up consumer permissions or verify global token
+
+4. Proxy:           Load OAuth credentials from Postgres (encrypted)
+                    Refresh access token if expired
+                    Forward request to Gmail API
+
+5. Response:        Return Gmail results as JSON to agent
+                    Log access in audit_events table
+```
+
+### Design principles
 
 - **Agents never see credentials.** They send a Bearer token, get back API results.
-- **OAuth is handled server-side.** Token refresh, consent flows, multi-account management -- all inside the vault.
-- **Everything is audited.** Every secret access, every API proxy call, every login attempt is logged.
-- **Secrets are encrypted at rest.** AES-256-GCM with versioned encryption.
-- **Consumer tokens use HMAC.** Constant-time comparison, no plaintext storage.
+- **OAuth is handled server-side.** Token refresh, consent flows, multi-account management — all inside Access.
+- **Everything is audited.** Every secret access, every API proxy call, every login attempt is logged with actor, timestamp, and IP.
+- **Secrets are encrypted at rest.** AES-256-GCM with versioned payloads (`v1.iv.authTag.ciphertext`).
+- **Consumer tokens use HMAC.** Constant-time comparison, only the prefix is stored — never the raw token.
+- **Stateless proxy.** Access doesn't cache or store API responses. It's a pass-through.
 
 ## Security
 

@@ -9,6 +9,8 @@ import {
   addReaction,
 } from "@/lib/slack/client";
 
+export const runtime = "nodejs";
+
 const getSchema = z.object({
   action: z.enum(["channels", "channel_history", "thread", "dms", "dm_history", "search", "users", "user"]).default("channels"),
   channelId: z.string().min(1).optional(),

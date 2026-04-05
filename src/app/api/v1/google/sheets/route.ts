@@ -3,6 +3,8 @@ import { z } from "zod";
 import { authenticateGoogleRequest } from "@/lib/google/auth-middleware";
 import { getSpreadsheet, readRange, writeRange, appendRows } from "@/lib/google/sheets";
 
+export const runtime = "nodejs";
+
 const getSchema = z.object({
   action: z.enum(["get", "read"]).default("read"),
   spreadsheetId: z.string().min(1),
@@ -13,7 +15,7 @@ const postSchema = z.object({
   action: z.enum(["write", "append"]),
   spreadsheetId: z.string().min(1),
   range: z.string().min(1),
-  values: z.array(z.array(z.any())),
+  values: z.array(z.array(z.union([z.string(), z.number(), z.boolean(), z.null()]))),
 });
 
 export async function GET(request: NextRequest) {

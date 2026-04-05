@@ -15,12 +15,20 @@ import {
   trashMessage,
 } from "@/lib/google/gmail";
 
+export const runtime = "nodejs";
+
 const getSchema = z.object({
   action: z.enum(["search", "thread", "message", "labels", "drafts"]).default("search"),
   q: z.string().optional().default("in:inbox"),
   max: z.coerce.number().int().positive().max(500).optional().default(20),
   threadId: z.string().min(1).optional(),
   messageId: z.string().min(1).optional(),
+});
+
+const attachmentSchema = z.object({
+  filename: z.string().min(1),
+  mimeType: z.string().min(1),
+  data: z.string().min(1),  // base64-encoded file content
 });
 
 const postSchema = z.discriminatedUnion("action", [
@@ -34,7 +42,7 @@ const postSchema = z.discriminatedUnion("action", [
     bcc: z.string().optional(),
     inReplyTo: z.string().optional(),
     threadId: z.string().optional(),
-    attachments: z.array(z.any()).optional(),
+    attachments: z.array(attachmentSchema).optional(),
   }),
   z.object({
     action: z.literal("send"),
@@ -46,7 +54,7 @@ const postSchema = z.discriminatedUnion("action", [
     bcc: z.string().optional(),
     inReplyTo: z.string().optional(),
     threadId: z.string().optional(),
-    attachments: z.array(z.any()).optional(),
+    attachments: z.array(attachmentSchema).optional(),
   }),
   z.object({
     action: z.literal("send_draft"),

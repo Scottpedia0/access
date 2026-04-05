@@ -8,6 +8,8 @@ import {
   getContactActivities, logCall,
 } from "@/lib/hubspot/client";
 
+export const runtime = "nodejs";
+
 const getSchema = z.object({
   action: z.enum(["search_contacts", "get_contact", "search_deals", "get_deal", "search_companies", "owners", "pipelines", "contact_activities"]).default("search_contacts"),
   q: z.string().optional().default(""),

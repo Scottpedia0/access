@@ -3,6 +3,8 @@ import { z } from "zod";
 import { authenticateGoogleRequest } from "@/lib/google/auth-middleware";
 import { listSites, querySearchAnalytics, getSitemaps, submitSitemap } from "@/lib/google/search-console";
 
+export const runtime = "nodejs";
+
 const getSchema = z.object({
   action: z.enum(["sites", "query", "sitemaps"]).default("sites"),
   siteUrl: z.string().min(1).optional(),

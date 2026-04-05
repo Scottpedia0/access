@@ -7,6 +7,8 @@ import {
   getZoneSettings, listPageRules, listWorkers, listTunnels, getTunnelConfig,
 } from "@/lib/cloudflare/client";
 
+export const runtime = "nodejs";
+
 const getSchema = z.object({
   action: z.enum(["accounts", "zones", "zone", "dns", "zone_settings", "page_rules", "workers", "tunnels", "tunnel_config"]).default("zones"),
   accountId: z.string().min(1).optional(),
@@ -16,7 +18,7 @@ const getSchema = z.object({
 
 const postSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("create_dns"), zoneId: z.string().min(1), record: z.object({ type: z.string(), name: z.string(), content: z.string(), ttl: z.number().optional(), proxied: z.boolean().optional() }) }),
-  z.object({ action: z.literal("update_dns"), zoneId: z.string().min(1), recordId: z.string().min(1), updates: z.record(z.string(), z.unknown()) }),
+  z.object({ action: z.literal("update_dns"), zoneId: z.string().min(1), recordId: z.string().min(1), updates: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])) }),
   z.object({ action: z.literal("delete_dns"), zoneId: z.string().min(1), recordId: z.string().min(1) }),
 ]);
 

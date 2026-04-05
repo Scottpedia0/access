@@ -3,6 +3,8 @@ import { z } from "zod";
 import { isValidGlobalAgentToken } from "@/lib/env";
 import { listProjects, getProject, listDeployments, getDeployment, getDeploymentBuildLogs, getRuntimeLogs, listDomains, getDomainConfig, listEnvVars, createEnvVar, listTeams } from "@/lib/vercel/client";
 
+export const runtime = "nodejs";
+
 const getSchema = z.object({
   action: z.enum(["projects", "project", "deployments", "deployment", "build_logs", "runtime_logs", "domains", "domain_config", "env", "teams"]).default("projects"),
   projectId: z.string().min(1).optional(),
@@ -16,7 +18,7 @@ const postSchema = z.object({
   projectId: z.string().min(1),
   key: z.string().min(1),
   value: z.string(),
-  target: z.any().optional(),
+  target: z.array(z.enum(["production", "preview", "development"])).optional(),
 });
 
 function auth(request: NextRequest): NextResponse | null {

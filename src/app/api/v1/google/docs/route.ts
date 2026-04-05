@@ -3,6 +3,8 @@ import { z } from "zod";
 import { authenticateGoogleRequest } from "@/lib/google/auth-middleware";
 import { getDocument, getDocumentText, appendText } from "@/lib/google/docs";
 
+export const runtime = "nodejs";
+
 const getSchema = z.object({
   action: z.enum(["get", "text"]).default("text"),
   documentId: z.string().min(1),

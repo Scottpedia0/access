@@ -3,6 +3,8 @@ import { z } from "zod";
 import { isValidGlobalAgentToken } from "@/lib/env";
 import { listBookings, getBooking, cancelBooking, listEventTypes, getSchedule } from "@/lib/cal/client";
 
+export const runtime = "nodejs";
+
 const getSchema = z.object({
   action: z.enum(["bookings", "booking", "event-types", "schedule"]).default("bookings"),
   status: z.string().optional(),

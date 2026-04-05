@@ -3,6 +3,8 @@ import { z } from "zod";
 import { isValidGlobalAgentToken } from "@/lib/env";
 import { listDomains, getDomainStatus, listDNSRecords, createDNSRecord, updateDNSRecord, deleteDNSRecord, checkDomainAvailability } from "@/lib/porkbun/client";
 
+export const runtime = "nodejs";
+
 const getSchema = z.object({
   action: z.enum(["domains", "status", "dns", "check"]).default("domains"),
   domain: z.string().min(1).optional(),

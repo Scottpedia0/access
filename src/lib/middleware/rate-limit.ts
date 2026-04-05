@@ -6,7 +6,21 @@
  *   - Proxy endpoints (/api/v1/*):  60 req/min per IP
  *
  * Stale entries are purged every 5 minutes.
+ *
+ * NOTE: This is a development / single-instance solution. The in-memory Map
+ * resets on every cold start in serverless environments (e.g. Vercel), so
+ * rate limits are not enforced reliably across invocations.
+ *
+ * TODO: Replace with Upstash Redis (@upstash/ratelimit) for production
+ * serverless deployments. See https://upstash.com/docs/redis/sdks/ratelimit-ts
  */
+
+/**
+ * Set RATE_LIMIT_ENABLED=false in your environment to disable rate limiting
+ * (useful in serverless until a Redis-backed implementation is in place).
+ */
+export const RATE_LIMIT_ENABLED =
+  process.env.RATE_LIMIT_ENABLED?.toLowerCase() !== "false";
 
 type BucketEntry = {
   timestamps: number[];

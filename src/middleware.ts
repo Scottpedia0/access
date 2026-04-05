@@ -4,6 +4,7 @@ import {
   checkAuthRateLimit,
   checkApiRateLimit,
   MAX_BODY_SIZE,
+  RATE_LIMIT_ENABLED,
 } from "@/lib/middleware/rate-limit";
 
 function getClientIp(request: NextRequest): string {
@@ -20,7 +21,8 @@ export function middleware(request: NextRequest) {
   const ip = getClientIp(request);
 
   // --- Rate limiting: auth endpoints ------------------------------------
-  if (pathname.startsWith("/api/auth")) {
+  // Set RATE_LIMIT_ENABLED=false to disable (e.g. in serverless without Redis)
+  if (RATE_LIMIT_ENABLED && pathname.startsWith("/api/auth")) {
     const { limited, retryAfterSeconds } = checkAuthRateLimit(ip);
 
     if (limited) {
@@ -35,7 +37,7 @@ export function middleware(request: NextRequest) {
   }
 
   // --- Rate limiting: proxy / v1 endpoints ------------------------------
-  if (pathname.startsWith("/api/v1")) {
+  if (RATE_LIMIT_ENABLED && pathname.startsWith("/api/v1")) {
     const { limited, retryAfterSeconds } = checkApiRateLimit(ip);
 
     if (limited) {
@@ -47,8 +49,14 @@ export function middleware(request: NextRequest) {
         },
       );
     }
+  }
 
-    // --- Body size limit for mutating methods ---------------------------
+  // --- Body size limit for mutating methods -----------------------------
+  // NOTE: This Content-Length check is an extra layer, not the only one.
+  // Next.js enforces body limits at the framework level (default 1 MB for
+  // API routes). This catches oversized requests early but does not cover
+  // chunked Transfer-Encoding where Content-Length is absent.
+  if (pathname.startsWith("/api/v1")) {
     const method = request.method.toUpperCase();
 
     if (method === "POST" || method === "PUT" || method === "PATCH") {
