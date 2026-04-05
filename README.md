@@ -31,6 +31,20 @@ You put every credential in it — API keys, OAuth tokens, bot tokens, agent cre
 
 **The happy path:** Agent sends Bearer token → Access handles auth, refresh, and proxying → Agent gets JSON or a bootstrap bundle back. That's it.
 
+### What it looks like
+
+**Dashboard** — services, keys, agents, and audit history at a glance:
+
+![Dashboard](docs/screenshots/dashboard.png)
+
+**Agent permissioning** — each agent gets its own token with scoped access grants:
+
+![Agents](docs/screenshots/agents.png)
+
+**Agent detail** — trust level, token prefix, last used, and grant count:
+
+![Agent detail](docs/screenshots/agent-detail.png)
+
 ## 30-second example
 
 ```bash
@@ -172,7 +186,7 @@ Visit `http://localhost:3000` and sign in with an email from your `OWNER_EMAILS`
 bash scripts/install.sh
 ```
 
-This installs the health-check skill into your Claude Code commands and walks you through MCP setup. You can accept or reject each step.
+This detects your installed agent harnesses (Claude Code, Cursor, Gemini CLI, Windsurf, VS Code, Codex), installs the health-check skill, and shows you the MCP config for each. You can accept or reject each step.
 
 ## Supported Services
 
