@@ -19,15 +19,16 @@ flowchart LR
 
 ## What it does
 
-You put every credential in it — API keys, OAuth tokens, bot tokens, agent credentials, service secrets, whatever your agents and scripts need. Then:
+You put every credential in it — API keys, OAuth tokens, bot tokens, agent credentials, service secrets, whatever your agents and scripts need. Then you decide who gets what.
 
+- **Per-agent and per-fleet permissioning** — each agent or group gets its own token with scoped access. Coding agents see GitHub and Linear. Comms agents see Gmail and Slack. Ops agents see AWS. Managed from the admin UI — no config files, no CLI juggling.
 - **Stores everything encrypted** — AES-256-GCM at rest, HMAC-hashed access tokens, audit trail on every read
 - **Handles OAuth** — token refresh, consent flows, multi-account Google — your agent never participates
 - **Proxies API calls** — for services with adapters, agents hit Access and get JSON back without ever seeing the underlying key
 - **Serves credentials directly** — for everything else, agents pull keys via `/bootstrap` or `/secrets/by-env/WHATEVER`
 - **Agents access agents** — store bot tokens, agent endpoints, internal service keys. Agent A authenticates with Access, gets credentials for Agent B.
 - **Logs everything** — every secret access, every API call, every auth attempt, with actor and IP
-- **Bootstraps sessions** — one `/bootstrap` call gives an agent all its env vars, docs, and context at once
+- **Bootstraps sessions** — one `/bootstrap` call gives an agent only what it's authorized to see — env vars, docs, and context
 
 ## 30-second example
 
