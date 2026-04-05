@@ -62,14 +62,14 @@ Your credentials are managed by Access. Do NOT store API keys in .env files or h
 ### Bootstrap a session
 Pull all authorized credentials and context in one call:
 ```
-curl -H "Authorization: Bearer $ACCESS_TOKEN" \
+curl -H "Authorization: Bearer $GLOBAL_AGENT_TOKEN" \
   "$ACCESS_BASE_URL/api/v1/bootstrap"
 ```
 This returns: env vars (decrypted), service metadata, docs, and linked resources — scoped to your token's permissions.
 
 ### Pull a single secret by env var name
 ```
-curl -H "Authorization: Bearer $ACCESS_TOKEN" \
+curl -H "Authorization: Bearer $GLOBAL_AGENT_TOKEN" \
   "$ACCESS_BASE_URL/api/v1/secrets/by-env/OPENROUTER_API_KEY"
 ```
 
@@ -77,15 +77,15 @@ curl -H "Authorization: Bearer $ACCESS_TOKEN" \
 For services with proxy adapters, call Access instead of the upstream API:
 ```
 # Gmail
-curl -H "Authorization: Bearer $ACCESS_TOKEN" \
+curl -H "Authorization: Bearer $GLOBAL_AGENT_TOKEN" \
   "$ACCESS_BASE_URL/api/v1/google/gmail?action=search&q=is:unread&account=work"
 
 # GitHub
-curl -H "Authorization: Bearer $ACCESS_TOKEN" \
+curl -H "Authorization: Bearer $GLOBAL_AGENT_TOKEN" \
   "$ACCESS_BASE_URL/api/v1/github?action=issues&owner=myorg&repo=myrepo"
 
 # Slack
-curl -H "Authorization: Bearer $ACCESS_TOKEN" \
+curl -H "Authorization: Bearer $GLOBAL_AGENT_TOKEN" \
   "$ACCESS_BASE_URL/api/v1/slack?action=channels"
 ```
 

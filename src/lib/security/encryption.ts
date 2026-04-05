@@ -91,9 +91,13 @@ export function decryptSecretValue(payload: string) {
 
 /**
  * Check if a payload needs re-encryption (was encrypted with an older version).
+ * Returns false for malformed payloads — those should be caught by decryptSecretValue.
  */
 export function needsReEncryption(payload: string): boolean {
-  const version = payload.split(".")[0];
+  const parts = payload.split(".");
+  if (parts.length !== 4) return false;  // malformed — don't attempt rotation
+  const version = parts[0];
+  if (!SUPPORTED_VERSIONS.includes(version)) return false;  // unknown version — don't touch
   return version !== CURRENT_VERSION;
 }
 
