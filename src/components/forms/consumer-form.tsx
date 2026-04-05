@@ -69,7 +69,7 @@ export function ConsumerForm({
               required
               defaultValue={values?.name}
               className="field"
-              placeholder="Moe"
+              placeholder="my-agent"
             />
           </label>
           <label className="space-y-2">
@@ -78,7 +78,7 @@ export function ConsumerForm({
               name="slug"
               defaultValue={values?.slug}
               className="field"
-              placeholder="moe"
+              placeholder="my-agent"
             />
           </label>
         </div>

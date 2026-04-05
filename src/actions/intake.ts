@@ -46,7 +46,7 @@ export async function submitSharedIntakeAction(
     return {
       error:
         error instanceof Error && error.message === "This request is missing a valid intake token."
-          ? "This link is missing the intake token. Ask Scott for the full link."
+          ? "This link is missing the intake token. Ask the admin for the full link."
           : error instanceof Error
             ? error.message
             : "Could not save that key.",

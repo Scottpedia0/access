@@ -131,7 +131,7 @@ export async function submitSharedIntake(input: SharedIntakeInput): Promise<Shar
   if (matchedService && duplicateSecret) {
     return {
       status: "duplicate",
-      success: "Already saved. Scott can use it from here.",
+      success: "Already saved. Ready to use.",
       serviceName: matchedService.name,
       envVarName: duplicateSecret.envVarName,
     };
@@ -268,8 +268,8 @@ export async function submitSharedIntake(input: SharedIntakeInput): Promise<Shar
     status: result.action,
     success:
       result.action === "updated"
-        ? "Updated. Scott can use it from here."
-        : "Saved. Scott can pick it up from here.",
+        ? "Updated. Ready to use."
+        : "Saved. Available now.",
     serviceName: result.service.name,
     envVarName: result.secret.envVarName,
   };

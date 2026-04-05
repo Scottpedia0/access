@@ -116,7 +116,7 @@ export default async function SettingsPage() {
 
         <SectionCard title="How this works" eyebrow="Operator notes">
           <div className="space-y-4 text-sm text-[color:var(--text-body)]">
-            <p>Scott logs in, adds services, and pastes one or more keys under each service.</p>
+            <p>The owner logs in, adds services, and pastes one or more keys under each service.</p>
             <p>Secret values are encrypted on the server before they ever hit the database.</p>
             <p>Trusted local bots and tools use one universal token against `/api/v1/bootstrap` to pull the vault in one shot.</p>
             <p>The white `/add` page is the async key-drop link for people who should paste a service and key without getting a dashboard login.</p>
@@ -146,7 +146,7 @@ export default async function SettingsPage() {
             <p>Bundle endpoint: {appOrigin}/api/v1/bootstrap</p>
             <p>
               {hasGlobalAgentToken
-                ? "A single universal token can fetch the whole vault in one pull for Moe, Curly, Larry, Shemp, and future local tools."
+                ? "A single universal token can fetch the whole vault in one pull for your agents and tools."
                 : "Bearer tokens can fetch every service, note, doc, resource, and key they are allowed to use in one call."}
             </p>
             <p>

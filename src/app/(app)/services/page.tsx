@@ -36,7 +36,7 @@ export default async function ServicesPage() {
     <div className="space-y-8">
       <PageHeader
         eyebrow="Services"
-        title="Scott’s operator registry"
+        title="Service registry"
         description="The main job here is simple: name a service, paste one or more keys, and keep any notes nearby so you never have to hunt for them again."
         actions={
           <Link
@@ -74,7 +74,7 @@ export default async function ServicesPage() {
         {services.length === 0 ? (
           <EmptyState
             title="No services yet"
-            description="Start with the APIs Scott reaches for most often: OpenAI, Gemini, Claude, OpenRouter, Apollo, HubSpot, Zoom, Vercel. Add the keys first. Extra notes can come later."
+            description="Start with the APIs you reach for most often: OpenAI, Gemini, Claude, OpenRouter, Apollo, HubSpot, Zoom, Vercel. Add the keys first. Extra notes can come later."
             action={
               <Link
                 href="/services/new"

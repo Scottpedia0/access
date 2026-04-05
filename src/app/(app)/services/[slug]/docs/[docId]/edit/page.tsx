@@ -25,7 +25,7 @@ export default async function EditDocPage({
       <PageHeader
         eyebrow="Edit note"
         title={doc.title}
-        description="Keep the markdown current so Scott and future agents inherit the right context without re-discovery."
+        description="Keep the markdown current so you and future agents inherit the right context without re-discovery."
       />
       <SectionCard title="Notes" eyebrow="Editing">
         <DocForm serviceId={service.id} submitLabel="Save note" values={doc} />

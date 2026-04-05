@@ -21,7 +21,7 @@ export default async function ConsumersPage() {
       <PageHeader
         eyebrow="Agents & tools"
         title="Agent and tool access"
-        description="Create one access token for Moe, Curly, Larry, or any tool, then choose exactly which services or keys it can use in a single bootstrap pull."
+        description="Create one access token for your agents and tools, then choose exactly which services or keys it can use in a single bootstrap pull."
         actions={
           <Link
             href="/consumers/new"
@@ -37,7 +37,7 @@ export default async function ConsumersPage() {
         {consumers.length === 0 ? (
           <EmptyState
             title="No agents or tools yet"
-            description="Create entries for Moe, Curly, Larry, local scripts, or review tools, then issue one token and choose exactly what each one can use."
+            description="Create entries for your agents, local scripts, or review tools, then issue one token and choose exactly what each one can use."
             action={
               <Link
                 href="/consumers/new"

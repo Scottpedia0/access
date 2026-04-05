@@ -49,7 +49,7 @@ export default async function EditConsumerPage({
       <PageHeader
         eyebrow="Edit agent or tool"
         title={`Update ${consumer.name}`}
-        description="Adjust grant scope without making Scott re-grant the same context every session."
+        description="Adjust grant scope without re-granting the same context every session."
       />
       <SectionCard title="Access details" eyebrow="Editing">
         <ConsumerForm

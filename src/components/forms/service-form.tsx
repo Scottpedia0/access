@@ -85,7 +85,7 @@ export function ServiceForm({
           rows={4}
           defaultValue={values?.description}
           className="field min-h-[140px]"
-          placeholder="What this service is and why Scott keeps it here."
+          placeholder="What this service is and why it exists."
         />
       </label>
 

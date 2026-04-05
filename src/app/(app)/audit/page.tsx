@@ -22,7 +22,7 @@ export default async function AuditPage() {
       <PageHeader
         eyebrow="Audit"
         title="Activity trail"
-        description="Every reveal, copy, edit, and machine retrieval lands here so Scott can see who touched what and when."
+        description="Every reveal, copy, edit, and machine retrieval lands here so you can see who touched what and when."
       />
       <SectionCard title="Recent events" eyebrow="100 latest entries">
         {events.length === 0 ? (

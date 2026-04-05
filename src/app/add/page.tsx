@@ -44,7 +44,7 @@ export default async function AddKeyPage({
           ) : (
             <div className="space-y-3 text-sm leading-7 text-stone-600">
               <p className="font-medium text-stone-900">This link is missing the access token.</p>
-              <p>Ask Scott for the full add-key link and try again.</p>
+              <p>Ask the admin for the full add-key link and try again.</p>
             </div>
           )}
         </div>
