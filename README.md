@@ -199,15 +199,28 @@ Access supports three token types for agent authentication:
 | Token Type | Scope | Use case |
 |-----------|-------|----------|
 | **Global Agent Token** | Full access to all services and secrets | Trusted single-operator setups |
-| **Consumer Tokens** | Granular per-service or per-secret access grants | Multi-agent setups where each agent gets different permissions |
+| **Consumer Tokens** | Granular per-service or per-secret access grants | Multi-agent setups where each agent or fleet gets different permissions |
 | **Shared Intake Token** | Write-only credential submission | Let team members drop keys without read access |
+
+### Permissioning by agent or fleet
+
+Consumer tokens let you segment access by role. Each consumer gets its own identity, token, and scoped grants:
+
+```
+Coding agents (Claude Code, Cursor)  →  GitHub, Linear, Sentry
+Comms agents                         →  Gmail, Slack, Calendar
+Ops agents                           →  AWS, Cloudflare, Vercel
+Intake-only (team members)           →  Write keys, can't read anything
+```
+
+Grants work at two levels — **whole service** (agent sees everything in that service) or **individual secrets** (agent sees only specific keys). When an agent calls `/bootstrap`, it only gets back what it's authorized to see.
 
 ```bash
 # Search Gmail with a global token
 curl -H "Authorization: Bearer YOUR_TOKEN" \
   "http://localhost:3000/api/v1/google/gmail?action=search&q=from:alice&account=work"
 
-# Bootstrap an agent session — pull everything at once
+# Bootstrap an agent session — pull only what this token is authorized for
 curl -H "Authorization: Bearer YOUR_TOKEN" \
   "http://localhost:3000/api/v1/bootstrap"
 ```
