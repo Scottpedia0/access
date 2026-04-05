@@ -1,4 +1,4 @@
-# Access Vault
+# Access
 
 Self-hosted credential vault + API proxy for AI agents.
 
@@ -6,9 +6,9 @@ One Bearer token, all your services. Your agents never touch OAuth tokens, API k
 
 ## What is this?
 
-Access Vault is an **MCP-native API gateway** that combines a credential vault, API proxy, and MCP server into a single self-hosted Next.js app. Agents authenticate with a single Bearer token and hit proxy endpoints like `/api/v1/google/gmail?action=search&q=...` -- the vault handles OAuth, token refresh, and forwards the request to the upstream API. The agent never sees or manages credentials directly.
+Access is an **MCP-native API gateway** that combines a credential vault, API proxy, and MCP server into a single self-hosted Next.js app. Agents authenticate with a single Bearer token and hit proxy endpoints like `/api/v1/google/gmail?action=search&q=...` -- the vault handles OAuth, token refresh, and forwards the request to the upstream API. The agent never sees or manages credentials directly.
 
-Unlike platforms like Composio or Nango, Access Vault is fully self-hosted, the agent does not participate in auth flows, and it works as a Claude Code MCP server out of the box.
+Unlike platforms like Composio or Nango, Access is fully self-hosted, the agent does not participate in auth flows, and it works as a Claude Code MCP server out of the box.
 
 ## Why not just use .env files?
 
@@ -19,7 +19,7 @@ Env files break down quickly when you have multiple agents, multiple machines, a
 - **No audit trail.** Which agent accessed which service? When? You have no idea.
 - **Bootstrapping is painful.** Every new session starts with `source ~/.env-that-has-everything` and a prayer.
 
-Access Vault solves all of these. Agents call one URL with one token. The vault refreshes OAuth, proxies the API, logs the access, and returns the result.
+Access solves all of these. Agents call one URL with one token. The vault refreshes OAuth, proxies the API, logs the access, and returns the result.
 
 ## Quick Start
 
@@ -32,8 +32,8 @@ Access Vault solves all of these. Agents call one URL with one token. The vault 
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/go2impact/access-vault.git
-cd access-vault
+git clone https://github.com/Scottpedia0/access.git
+cd access
 npm install
 ```
 
@@ -82,7 +82,7 @@ Visit `http://localhost:3000` and sign in with an email from your `OWNER_EMAILS`
 
 ## Supported Services
 
-Access Vault ships with proxy adapters for:
+Access ships with proxy adapters for:
 
 | Service | Endpoint | Auth Type |
 |---------|----------|-----------|
@@ -100,7 +100,7 @@ The Google adapter supports **multiple accounts** simultaneously -- configure th
 
 ## Authentication
 
-Access Vault supports three methods for agent authentication:
+Access supports three methods for agent authentication:
 
 1. **Global Agent Token** -- A single Bearer token that grants access to all services. Best for trusted single-operator setups.
 2. **Consumer Tokens** -- Per-agent tokens with granular access grants. Use when you want different agents to have different permissions.
@@ -130,7 +130,7 @@ See any existing adapter (e.g., `src/app/api/v1/hubspot/route.ts`) as a template
 
 ## MCP Server
 
-Access Vault includes a standalone MCP server (`mcp-server.mjs`) that exposes all Google Workspace tools to Claude Code via the stdio transport.
+Access includes a standalone MCP server (`mcp-server.mjs`) that exposes all Google Workspace tools to Claude Code via the stdio transport.
 
 ### Configure in Claude Code
 
@@ -139,9 +139,9 @@ Add to your `~/.claude.json` or project `.mcp.json`:
 ```json
 {
   "mcpServers": {
-    "access-vault": {
+    "access": {
       "command": "node",
-      "args": ["/path/to/access-vault/mcp-server.mjs"],
+      "args": ["/path/to/access/mcp-server.mjs"],
       "env": {
         "ACCESS_BASE_URL": "http://localhost:3000",
         "GLOBAL_AGENT_TOKEN": "your-token-here"
@@ -160,7 +160,7 @@ Agent (Claude Code, Codex, scripts, etc.)
   |
   |  Bearer Token
   v
-Access Vault (Next.js)
+Access (Next.js)
   |
   |-- /api/v1/google/*  -->  OAuth 2.0  -->  Google APIs
   |-- /api/v1/hubspot   -->  API Key    -->  HubSpot API
@@ -196,7 +196,7 @@ Key design principles:
 
 ## Deployment
 
-Access Vault deploys well on **Vercel** with a **Neon** or **Supabase** Postgres database:
+Access deploys well on **Vercel** with a **Neon** or **Supabase** Postgres database:
 
 1. Push to GitHub
 2. Import in Vercel
