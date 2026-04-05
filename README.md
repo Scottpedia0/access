@@ -16,9 +16,12 @@ flowchart LR
 
 ## What it does
 
-- **Stores credentials** — API keys, OAuth tokens, and service context in one encrypted place
-- **Handles auth** — OAuth flows, token refresh, multi-account Google — your agent never participates
-- **Proxies API calls** — one Bearer token gives agents access to Gmail, Slack, GitHub, and 24 other services
+You put every credential in it — API keys, OAuth tokens, passwords, service secrets, whatever your agents and scripts need. Then:
+
+- **Stores everything encrypted** — AES-256-GCM at rest, HMAC-hashed access tokens, audit trail on every read
+- **Handles OAuth** — token refresh, consent flows, multi-account Google — your agent never participates
+- **Proxies API calls** — for services with adapters, agents hit Access and get JSON back without ever seeing the underlying key
+- **Serves credentials directly** — for everything else, agents pull keys via `/bootstrap` or `/secrets/by-env/WHATEVER`
 - **Logs everything** — every secret access, every API call, every auth attempt, with actor and IP
 - **Bootstraps sessions** — one `/bootstrap` call gives an agent all its env vars, docs, and context at once
 
@@ -45,10 +48,11 @@ With MCP, your agent gets tools like `gmail_search`, `calendar_list`, `drive_lis
 - Anyone tired of bootstrapping agent sessions with scattered `.env` files
 
 **Not a fit:**
-- Enterprise secrets management (use HashiCorp Vault)
+- Enterprise secrets management with compliance requirements (use HashiCorp Vault)
 - High-compliance infrastructure with KMS/HSM requirements
 - Large team IAM or multi-tenant access control
-- Password management (use 1Password/Bitwarden)
+
+**How it differs from a password manager:** 1Password stores credentials for humans to copy-paste. Access stores credentials and *uses them* — proxying API calls, refreshing OAuth tokens, bootstrapping agent sessions. Your agent never sees the raw key for proxied services.
 
 ## Security posture
 
