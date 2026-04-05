@@ -79,17 +79,29 @@ With MCP, your agent gets tools like `gmail_search`, `calendar_list`, `drive_lis
 - **No audit trail.** Which agent accessed which service? When? From where? No idea.
 - **Bootstrapping is painful.** Every new session starts with loading env vars and hoping nothing expired.
 
-## How it compares
+## Existing solutions (and where Access fits)
 
-| | Access | `.env` files | Composio / Nango |
-|---|--------|-------------|-----------------|
-| Self-hosted | Yes | Yes | Cloud-first |
-| OAuth refresh | Automatic | Manual | Automatic |
-| MCP server | Built-in | No | No |
-| Audit trail | Yes | No | Varies |
-| Agent bootstrapping | One call | Manual | No |
-| Complexity | One Next.js app | None | Platform |
-| Cost | Free | Free | Paid plans |
+There are real tools for parts of this problem. Most solve one slice:
+
+- **Secret managers** ([1Password CLI](https://developer.1password.com/docs/cli/secrets-scripts/), [Doppler](https://docs.doppler.com/docs/cli), [Infisical](https://infisical.com/docs/documentation/getting-started/cli)) — inject static secrets at runtime via `op run` / `doppler run`. Great for API keys. Don't handle OAuth refresh or API proxying.
+- **Workload identity / OIDC** ([GitHub Actions OIDC](https://docs.github.com/en/actions/reference/security/oidc)) — avoid long-lived secrets entirely by proving identity for short-lived credentials. Great for CI/CD. Doesn't help with local agent sessions.
+- **Dynamic secrets** ([Vault dynamic secrets](https://developer.hashicorp.com/vault/tutorials/getting-started/getting-started-dynamic-secrets)) — mint time-bound credentials on demand. Serious infrastructure. Overkill for most agent setups.
+- **OAuth brokers** ([Nango](https://docs.nango.dev/guides), [Composio](https://docs.composio.dev/docs/authenticating-tools)) — handle OAuth authorization, token storage, and refresh. Cloud-first platforms with their own dashboards and billing.
+
+Mature orgs split the problem across Vault + OIDC + OAuth brokers + internal platform tooling. Smaller teams use 1Password/Doppler for static secrets and still suffer on OAuth.
+
+Access collapses these layers into one self-hosted app: store credentials, refresh OAuth, proxy API calls, bootstrap agent sessions, audit everything. It's less secure than Vault + KMS, but it's one thing instead of four — and it actually ships.
+
+| | Access | `.env` files | 1Password/Doppler | Nango/Composio | Vault |
+|---|--------|-------------|-------------------|----------------|-------|
+| Self-hosted | Yes | Yes | Varies | Cloud-first | Yes |
+| OAuth refresh | Automatic | Manual | No | Yes | No |
+| API proxying | Yes | No | No | Some | No |
+| MCP server | Built-in | No | No | No | No |
+| Agent bootstrapping | One call | Manual | No | No | No |
+| Audit trail | Yes | No | Yes | Varies | Yes |
+| Complexity | One app | None | CLI + cloud | Platform | Significant |
+| Cost | Free | Free | Paid | Paid | Free / paid |
 
 ## Quick Start
 
