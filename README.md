@@ -1,10 +1,13 @@
 # Access
 
+> "It's kind of a nifty little utility."
+> — me
+>
+> Everything below this line was drafted by AI.
+
 One Bearer token, all your services.
 
 Access gives agents and scripts secure access to OAuth and API-key-backed services without handling credentials directly. Store your secrets, refresh tokens automatically, proxy requests, audit everything — through one stable interface over HTTP and MCP.
-
-> "It's kind of a nifty little utility." — the human who built it. Everything else here was written by AI.
 
 ```mermaid
 flowchart LR
