@@ -3,7 +3,7 @@
 > "It's kind of a nifty little utility."
 > — me
 >
-> Everything below this line was drafted by robots.
+> Everything below this line was drafted by the bots.
 
 One Bearer token, all your services.
 
