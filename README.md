@@ -281,7 +281,7 @@ curl -H "Authorization: Bearer $TOKEN" \
 - **Agents never see credentials.** They send a Bearer token, get back API results.
 - **OAuth is handled server-side.** Token refresh, consent flows, multi-account management — all inside Access.
 - **Everything is audited.** Every secret access, every API proxy call, every login attempt is logged with actor, timestamp, and IP.
-- **Secrets are encrypted at rest.** AES-256-GCM with versioned payloads (`v1.iv.authTag.ciphertext`).
+- **Secrets are encrypted at rest.** AES-256-GCM with versioned payloads (`v2.iv.authTag.ciphertext`), key rotation supported.
 - **Consumer tokens use HMAC.** Constant-time comparison, only the prefix is stored — never the raw token.
 - **Stateless proxy.** Access doesn't cache or store API responses. It's a pass-through.
 
@@ -297,10 +297,31 @@ curl -H "Authorization: Bearer $TOKEN" \
 - Rate limiting on auth and API endpoints (configurable, in-memory by default)
 - Request body size limits on all mutating endpoints
 
+### Key Rotation
+
+Access supports zero-downtime encryption key rotation:
+
+```bash
+# 1. Generate a new key
+openssl rand -base64 32
+
+# 2. Set the new key and keep the old one
+SECRET_ENCRYPTION_KEY="<new key>"
+SECRET_ENCRYPTION_KEY_PREVIOUS="<old key>"
+
+# 3. Re-encrypt all secrets
+npx tsx scripts/rotate-keys.ts
+
+# 4. After success, remove the old key
+# unset SECRET_ENCRYPTION_KEY_PREVIOUS
+```
+
+The script is idempotent — secrets already on the current key are skipped. It decrypts with whichever key works (current or previous) and re-encrypts with the current key.
+
 ### Security Roadmap
 
 - [ ] Per-service scoped tokens (split global token into granular permissions)
-- [ ] Key rotation support
+- [x] ~~Key rotation support~~
 - [ ] Redis-backed rate limiting for serverless
 - [ ] Envelope encryption / KMS integration
 
