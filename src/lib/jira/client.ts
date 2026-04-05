@@ -25,6 +25,7 @@ async function jiraRest(path: string, options: RequestInit = {}) {
     const text = await res.text();
     throw new Error(`Jira API error ${res.status}: ${text}`);
   }
+  if (res.status === 204) return { ok: true };
   return res.json();
 }
 
