@@ -9,8 +9,8 @@ const getSchema = z.object({
 });
 
 const postSchema = z.discriminatedUnion("action", [
-  z.object({ action: z.literal("create_dns"), domain: z.string().min(1), record: z.record(z.any()) }),
-  z.object({ action: z.literal("update_dns"), domain: z.string().min(1), id: z.string().min(1), record: z.record(z.any()) }),
+  z.object({ action: z.literal("create_dns"), domain: z.string().min(1), record: z.object({ type: z.string(), content: z.string(), name: z.string().optional(), ttl: z.string().optional(), prio: z.string().optional() }) }),
+  z.object({ action: z.literal("update_dns"), domain: z.string().min(1), id: z.string().min(1), record: z.object({ type: z.string(), content: z.string(), name: z.string().optional(), ttl: z.string().optional() }) }),
   z.object({ action: z.literal("delete_dns"), domain: z.string().min(1), id: z.string().min(1) }),
 ]);
 

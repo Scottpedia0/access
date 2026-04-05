@@ -16,10 +16,10 @@ const getSchema = z.object({
 });
 
 const postSchema = z.discriminatedUnion("action", [
-  z.object({ action: z.literal("create_contact"), properties: z.record(z.any()) }),
-  z.object({ action: z.literal("update_contact"), id: z.string().min(1), properties: z.record(z.any()) }),
-  z.object({ action: z.literal("create_deal"), properties: z.record(z.any()) }),
-  z.object({ action: z.literal("update_deal"), id: z.string().min(1), properties: z.record(z.any()) }),
+  z.object({ action: z.literal("create_contact"), properties: z.record(z.string(), z.string()) }),
+  z.object({ action: z.literal("update_contact"), id: z.string().min(1), properties: z.record(z.string(), z.string()) }),
+  z.object({ action: z.literal("create_deal"), properties: z.record(z.string(), z.string()) }),
+  z.object({ action: z.literal("update_deal"), id: z.string().min(1), properties: z.record(z.string(), z.string()) }),
   z.object({ action: z.literal("create_note"), body: z.string().min(1), contactId: z.string().optional(), dealId: z.string().optional(), ownerId: z.string().optional() }),
   z.object({ action: z.literal("log_call"), contactId: z.string().min(1), body: z.string().min(1), durationMs: z.number().int().nonnegative().optional().default(0), ownerId: z.string().optional() }),
 ]);

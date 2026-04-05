@@ -15,8 +15,8 @@ const getSchema = z.object({
 });
 
 const postSchema = z.discriminatedUnion("action", [
-  z.object({ action: z.literal("create_dns"), zoneId: z.string().min(1), record: z.record(z.any()) }),
-  z.object({ action: z.literal("update_dns"), zoneId: z.string().min(1), recordId: z.string().min(1), updates: z.record(z.any()) }),
+  z.object({ action: z.literal("create_dns"), zoneId: z.string().min(1), record: z.object({ type: z.string(), name: z.string(), content: z.string(), ttl: z.number().optional(), proxied: z.boolean().optional() }) }),
+  z.object({ action: z.literal("update_dns"), zoneId: z.string().min(1), recordId: z.string().min(1), updates: z.record(z.string(), z.unknown()) }),
   z.object({ action: z.literal("delete_dns"), zoneId: z.string().min(1), recordId: z.string().min(1) }),
 ]);
 
