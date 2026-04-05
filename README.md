@@ -2,24 +2,87 @@
 
 Self-hosted secret, context, and bootstrap service for agents and scripts.
 
-One Bearer token, all your services. Your agents never touch OAuth tokens, API keys, or auth flows.
+Your agent should call Gmail, not do OAuth. Your agent should ask for an API key, not juggle `.env` files across six machines.
 
-## What is this?
+That's what this is.
 
-Access is an **MCP-native API gateway** that combines a credential store, API proxy, and MCP server into a single self-hosted Next.js app. Agents authenticate with a single Bearer token and hit proxy endpoints like `/api/v1/google/gmail?action=search&q=...` — Access handles OAuth, token refresh, and forwards the request upstream. The agent never sees or manages credentials directly.
+```mermaid
+flowchart LR
+    A[Any MCP client\nor HTTP caller] -->|Bearer token| B["Access\n(Next.js + Postgres)"]
+    B -->|OAuth 2.0| C[Google · GitHub · Sentry · Oura]
+    B -->|API key| D[HubSpot · Linear · Jira · Stripe\nNotion · Apollo · Cal · Porkbun]
+    B -->|Token| E[Slack · Cloudflare · Vercel\nGitLab · AWS]
+```
 
-Unlike platforms like Composio or Nango, Access is fully self-hosted, the agent does not participate in auth flows, and it works as an MCP server with Claude Code, Cursor, Gemini CLI, Codex, Windsurf, and any other MCP-compatible client out of the box.
+## What it does
+
+- **Stores credentials** — API keys, OAuth tokens, and service context in one encrypted place
+- **Handles auth** — OAuth flows, token refresh, multi-account Google — your agent never participates
+- **Proxies API calls** — one Bearer token gives agents access to Gmail, Slack, GitHub, and 24 other services
+- **Logs everything** — every secret access, every API call, every auth attempt, with actor and IP
+- **Bootstraps sessions** — one `/bootstrap` call gives an agent all its env vars, docs, and context at once
+
+## 30-second example
+
+```bash
+# Your agent searches Gmail through Access
+curl -H "Authorization: Bearer $TOKEN" \
+  "https://your-access-instance/api/v1/google/gmail?action=search&q=from:alice&account=work"
+
+# Or bootstraps an entire session in one call
+curl -H "Authorization: Bearer $TOKEN" \
+  "https://your-access-instance/api/v1/bootstrap"
+```
+
+With MCP, your agent gets tools like `gmail_search`, `calendar_list`, `drive_list` — no configuration per service, no expired tokens, no credential management.
+
+## Who this is for
+
+**Good fit:**
+- Running AI agents (Claude Code, Cursor, Gemini CLI, Codex) across multiple sessions or machines
+- Self-hosted personal or small-team setups
+- Multi-service workflows where agents need Gmail, Slack, GitHub, etc.
+- Anyone tired of bootstrapping agent sessions with scattered `.env` files
+
+**Not a fit:**
+- Enterprise secrets management (use HashiCorp Vault)
+- High-compliance infrastructure with KMS/HSM requirements
+- Large team IAM or multi-tenant access control
+- Password management (use 1Password/Bitwarden)
+
+## Security posture
+
+**What Access protects against:**
+- Agents seeing or storing raw credentials
+- Expired OAuth tokens breaking agent sessions
+- Unaudited credential access across machines
+- Plaintext secrets in databases (AES-256-GCM encryption at rest)
+- Brute-force token guessing (HMAC-SHA256 hashed, constant-time comparison)
+
+**What Access does not protect against:**
+- A compromised Access instance (if someone gets your server, they get everything)
+- Cloud-grade key management (no KMS/HSM integration yet — see roadmap)
+- Multi-tenant isolation (this is a single-owner system)
+- Network-level attacks (deploy behind HTTPS, use a firewall)
 
 ## Why not just use `.env` files?
 
-Env files break down quickly when you have multiple agents, multiple machines, and services that use OAuth:
-
-- **OAuth tokens expire.** Google access tokens last 60 minutes. Your agent can't refresh them — but Access can.
+- **OAuth tokens expire.** Google access tokens last 60 minutes. Your agent can't refresh them — Access can.
 - **Credentials scatter.** Each agent session needs its own copy. Rotate a key and you're updating it in 6 places.
-- **No audit trail.** Which agent accessed which service? When? From where? You have no idea.
+- **No audit trail.** Which agent accessed which service? When? From where? No idea.
 - **Bootstrapping is painful.** Every new session starts with loading env vars and hoping nothing expired.
 
-Access solves all of these. Agents call one URL with one token. Access refreshes OAuth, proxies the API, logs the access, and returns the result.
+## How it compares
+
+| | Access | `.env` files | Composio / Nango |
+|---|--------|-------------|-----------------|
+| Self-hosted | Yes | Yes | Cloud-first |
+| OAuth refresh | Automatic | Manual | Automatic |
+| MCP server | Built-in | No | No |
+| Audit trail | Yes | No | Varies |
+| Agent bootstrapping | One call | Manual | No |
+| Complexity | One Next.js app | None | Platform |
+| Cost | Free | Free | Paid plans |
 
 ## Quick Start
 
@@ -82,41 +145,19 @@ Visit `http://localhost:3000` and sign in with an email from your `OWNER_EMAILS`
 
 ## Supported Services
 
-### Service Proxy Adapters
+27 service endpoints across `/api/v1/*`. Each adapter handles auth and proxies requests upstream.
 
-Access ships with proxy adapters that handle auth and forward requests to upstream APIs:
+**Google Workspace** (OAuth 2.0, multi-account) — Gmail, Calendar, Drive, Sheets, Docs, Contacts, Analytics, Search Console, Tag Manager, Admin Reports, Profile
 
-| Service | Endpoint | Auth Type |
-|---------|----------|-----------|
-| **Gmail** | `/api/v1/google/gmail` | OAuth 2.0 |
-| **Google Calendar** | `/api/v1/google/calendar` | OAuth 2.0 |
-| **Google Drive** | `/api/v1/google/drive` | OAuth 2.0 |
-| **Google Sheets** | `/api/v1/google/sheets` | OAuth 2.0 |
-| **Google Docs** | `/api/v1/google/docs` | OAuth 2.0 |
-| **Google Contacts** | `/api/v1/google/contacts` | OAuth 2.0 |
-| **Google Analytics** | `/api/v1/google/analytics` | OAuth 2.0 |
-| **Google Search Console** | `/api/v1/google/search-console` | OAuth 2.0 |
-| **Google Tag Manager** | `/api/v1/google/tag-manager` | OAuth 2.0 |
-| **Google Admin Reports** | `/api/v1/google/admin-reports` | OAuth 2.0 |
-| **Google Account Profile** | `/api/v1/google/profile` | OAuth 2.0 |
-| **HubSpot** | `/api/v1/hubspot` | Private app token |
-| **Slack** | `/api/v1/slack` | Bot token |
-| **Cloudflare** | `/api/v1/cloudflare` | API token |
-| **Apollo.io** | `/api/v1/apollo` | API key |
-| **Cal.com** | `/api/v1/cal` | API key |
-| **Oura Ring** | `/api/v1/oura` | Personal access token |
-| **Porkbun** | `/api/v1/porkbun` | API key + secret |
-| **Vercel** | `/api/v1/vercel` | Personal token |
-| **GitHub** | `/api/v1/github` | Personal access token |
-| **Linear** | `/api/v1/linear` | API key |
-| **Jira** | `/api/v1/jira` | Email + API token |
-| **GitLab** | `/api/v1/gitlab` | Personal access token |
-| **Notion** | `/api/v1/notion` | Internal integration token |
-| **AWS** | `/api/v1/aws` | IAM access key + secret |
-| **Sentry** | `/api/v1/sentry` | Auth token |
-| **Stripe** | `/api/v1/stripe` | Secret key (read-only) |
+**Developer tools** — GitHub, GitLab, Linear, Jira, Notion, Sentry, Vercel
 
-Google services support **multiple accounts** — configure via the `GOOGLE_ACCOUNTS` env var (e.g., `work:me@company.com,personal:me@gmail.com`).
+**Business** — HubSpot, Slack, Stripe (read-only), Apollo.io, Cal.com
+
+**Infrastructure** — AWS (S3, EC2, Lambda, CloudWatch — optional SDK deps), Cloudflare
+
+**Other** — Oura Ring, Porkbun
+
+Google services support multiple accounts — configure via the `GOOGLE_ACCOUNTS` env var (e.g., `work:me@company.com,personal:me@gmail.com`). Adding a new adapter is ~100 lines — see [Adding a New Service](#adding-a-new-service).
 
 ### Core Endpoints
 
@@ -208,14 +249,6 @@ curl -H "Authorization: Bearer $TOKEN" \
 ```
 
 ## Architecture
-
-```mermaid
-flowchart LR
-    A[Any MCP client\nor HTTP caller] -->|Bearer token| B["Access\n(Next.js + Postgres)"]
-    B -->|OAuth 2.0| C[Google · GitHub · Sentry · Oura]
-    B -->|API key| D[HubSpot · Linear · Jira · Stripe\nNotion · Apollo · Cal · Porkbun]
-    B -->|Token| E[Slack · Cloudflare · Vercel\nGitLab · AWS]
-```
 
 ### How a request flows
 
