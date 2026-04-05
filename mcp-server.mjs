@@ -14,13 +14,17 @@ const BASE_URL = process.env.ACCESS_BASE_URL ?? "http://localhost:3000";
 const TOKEN = process.env.GLOBAL_AGENT_TOKEN;
 
 if (!TOKEN) {
-  console.error("GLOBAL_AGENT_TOKEN env var required");
-  process.exit(1);
+  console.error("WARNING: GLOBAL_AGENT_TOKEN not set. Server will start for tool discovery but API calls will fail.");
 }
 
-const headers = { "Authorization": `Bearer ${TOKEN}`, "Content-Type": "application/json" };
+const headers = TOKEN
+  ? { "Authorization": `Bearer ${TOKEN}`, "Content-Type": "application/json" }
+  : { "Content-Type": "application/json" };
 
 async function api(path, options = {}) {
+  if (!TOKEN) {
+    throw new Error("GLOBAL_AGENT_TOKEN is not configured. Set it in your environment to use Access tools.");
+  }
   const res = await fetch(`${BASE_URL}${path}`, { headers, ...options });
   return res.json();
 }
