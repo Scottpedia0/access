@@ -1,10 +1,10 @@
 # Access
 
-Self-hosted secret, context, and bootstrap service for agents and scripts.
+One Bearer token, all your services.
 
-Your agent should call Gmail, not do OAuth. Your agent should ask for an API key, not juggle `.env` files across six machines.
+Access gives agents and scripts secure access to OAuth and API-key-backed services without handling credentials directly. Store your secrets, refresh tokens automatically, proxy requests, audit everything — through one stable interface over HTTP and MCP.
 
-That's what this is.
+> "It's kind of a nifty little utility." — the human who built it. Everything else here was written by AI.
 
 ```mermaid
 flowchart LR
