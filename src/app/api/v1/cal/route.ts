@@ -1,6 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { isValidGlobalAgentToken } from "@/lib/env";
 import { listBookings, getBooking, cancelBooking, listEventTypes, getSchedule } from "@/lib/cal/client";
+
+const getSchema = z.object({
+  action: z.enum(["bookings", "booking", "event-types", "schedule"]).default("bookings"),
+  status: z.string().optional(),
+  limit: z.coerce.number().int().positive().max(200).optional().default(20),
+  bookingId: z.coerce.number().int().positive().optional(),
+});
+
+const postSchema = z.object({
+  action: z.enum(["cancel"]),
+  bookingId: z.number().int().positive(),
+  reason: z.string().optional(),
+});
 
 function auth(request: NextRequest): NextResponse | null {
   const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
@@ -14,26 +28,25 @@ export async function GET(request: NextRequest) {
   const denied = auth(request);
   if (denied) return denied;
 
-  const action = request.nextUrl.searchParams.get("action") ?? "bookings";
+  const raw = Object.fromEntries(request.nextUrl.searchParams.entries());
+  const parsed = getSchema.safeParse(raw);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid parameters", details: parsed.error.flatten() }, { status: 400 });
+  }
+  const { action, status, limit, bookingId } = parsed.data;
 
   try {
     switch (action) {
-      case "bookings": {
-        const status = request.nextUrl.searchParams.get("status") ?? undefined;
-        const limit = parseInt(request.nextUrl.searchParams.get("limit") ?? "20", 10);
-        return NextResponse.json(await listBookings(status, limit));
-      }
+      case "bookings":
+        return NextResponse.json(await listBookings(status ?? undefined, limit));
       case "booking": {
-        const id = request.nextUrl.searchParams.get("bookingId");
-        if (!id) return NextResponse.json({ error: "bookingId required" }, { status: 400 });
-        return NextResponse.json(await getBooking(parseInt(id, 10)));
+        if (!bookingId) return NextResponse.json({ error: "bookingId required" }, { status: 400 });
+        return NextResponse.json(await getBooking(bookingId));
       }
       case "event-types":
         return NextResponse.json(await listEventTypes());
       case "schedule":
         return NextResponse.json(await getSchedule());
-      default:
-        return NextResponse.json({ error: `Unknown action: ${action}` }, { status: 400 });
     }
   } catch (err) {
     return NextResponse.json({ error: "Cal.com API error", details: process.env.NODE_ENV === "development" ? String(err) : "An internal error occurred" }, { status: 500 });
@@ -45,15 +58,18 @@ export async function POST(request: NextRequest) {
   if (denied) return denied;
 
   const body = await request.json();
+  const parsed = postSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid parameters", details: parsed.error.flatten() }, { status: 400 });
+  }
+  const data = parsed.data;
 
   try {
-    switch (body.action) {
+    switch (data.action) {
       case "cancel": {
-        const result = await cancelBooking(body.bookingId, body.reason);
+        const result = await cancelBooking(data.bookingId, data.reason);
         return NextResponse.json(result);
       }
-      default:
-        return NextResponse.json({ error: `Unknown action: ${body.action}` }, { status: 400 });
     }
   } catch (err) {
     return NextResponse.json({ error: "Cal.com API error", details: process.env.NODE_ENV === "development" ? String(err) : "An internal error occurred" }, { status: 500 });

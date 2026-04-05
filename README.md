@@ -130,11 +130,11 @@ See any existing adapter (e.g., `src/app/api/v1/hubspot/route.ts`) as a template
 
 ## MCP Server
 
-Access includes a standalone MCP server (`mcp-server.mjs`) that exposes all Google Workspace tools to Claude Code via the stdio transport.
+Access includes a standalone MCP server (`mcp-server.mjs`) that exposes all Google Workspace tools via the stdio transport. Works with any MCP-compatible client.
 
-### Configure in Claude Code
+### Claude Code
 
-Add to your `~/.claude.json` or project `.mcp.json`:
+Add to `~/.claude/mcp.json` or your project's `.mcp.json`:
 
 ```json
 {
@@ -151,7 +151,30 @@ Add to your `~/.claude.json` or project `.mcp.json`:
 }
 ```
 
-This gives Claude Code tools like `gmail_search`, `calendar_list`, `drive_list`, `contacts_search`, and more -- all authenticated through the vault.
+### Gemini CLI
+
+Add to `.gemini/settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "access": {
+      "command": "node",
+      "args": ["/path/to/access/mcp-server.mjs"],
+      "env": {
+        "ACCESS_BASE_URL": "http://localhost:3000",
+        "GLOBAL_AGENT_TOKEN": "your-token-here"
+      }
+    }
+  }
+}
+```
+
+### Codex / Any MCP Client
+
+Same config pattern — the server uses stdio transport. Set `GLOBAL_AGENT_TOKEN` and `ACCESS_BASE_URL` as environment variables, point the command at `mcp-server.mjs`.
+
+Once connected, your agent gets tools like `gmail_search`, `calendar_list`, `drive_list`, `contacts_search`, and more — all authenticated through the vault.
 
 ## Architecture
 

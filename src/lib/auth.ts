@@ -23,7 +23,7 @@ async function ensureOwnerUser(email: string) {
     update: {},
     create: {
       email,
-      name: "Scott Moran",
+      name: "Owner",
     },
   });
 }
@@ -70,11 +70,29 @@ if (hasOwnerPasswordAuth) {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         const email = credentials?.email?.trim().toLowerCase();
         const password = credentials?.password ?? "";
 
         if (!email || !isAllowedOwnerEmail(email) || !matchesOwnerPassword(password)) {
+          const ip =
+            (req?.headers && ("x-forwarded-for" in req.headers
+              ? (Array.isArray(req.headers["x-forwarded-for"])
+                  ? req.headers["x-forwarded-for"][0]
+                  : req.headers["x-forwarded-for"]?.split(",")[0]?.trim())
+              : req.headers["x-real-ip"])) || "unknown";
+
+          console.warn(
+            JSON.stringify({
+              level: "warn",
+              event: "auth_failure",
+              reason: "invalid_credentials",
+              ip,
+              endpoint: "/api/auth/callback/owner-password",
+              email: email || null,
+              timestamp: new Date().toISOString(),
+            }),
+          );
           return null;
         }
 
@@ -123,7 +141,7 @@ export const authOptions: NextAuthOptions = {
         actor: {
           actorType: ActorType.USER,
           actorId: user.id ?? "unknown-user",
-          actorLabel: user.email ?? user.name ?? "Scott Moran",
+          actorLabel: user.email ?? user.name ?? "Owner",
         },
         action: AuditAction.LOGIN_SUCCEEDED,
       });

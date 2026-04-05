@@ -1,5 +1,6 @@
 import { AuditAction } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
 import {
   authenticateRequestActor,
@@ -11,6 +12,10 @@ import { createAuditEvent } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 import { decryptSecretValue } from "@/lib/security/encryption";
 
+const getSchema = z.object({
+  services: z.string().optional(),
+});
+
 export async function GET(request: NextRequest) {
   const actor = await authenticateRequestActor(request);
 
@@ -18,8 +23,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const requestedSlugs = request.nextUrl.searchParams
-    .get("services")
+  const raw = Object.fromEntries(request.nextUrl.searchParams.entries());
+  const parsed = getSchema.safeParse(raw);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid parameters", details: parsed.error.flatten() }, { status: 400 });
+  }
+
+  const requestedSlugs = parsed.data.services
     ?.split(",")
     .map((entry) => entry.trim())
     .filter(Boolean);

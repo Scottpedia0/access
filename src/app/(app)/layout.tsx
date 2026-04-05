@@ -26,7 +26,7 @@ export default async function AppLayout({
                   className="app-button-primary inline-flex items-center gap-3 rounded-full px-4 py-2 text-sm font-medium"
                 >
                   <KeyRound className="h-4 w-4" />
-                  Access Vault
+                  Access
                 </Link>
                 <span className="app-button-secondary rounded-full px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em]">
                   {session.user.email ?? "Owner"}

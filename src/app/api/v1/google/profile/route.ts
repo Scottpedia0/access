@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { isValidGlobalAgentToken } from "@/lib/env";
 import { getAllProfiles, getProfile } from "@/lib/google/profile";
 import type { AccountAlias } from "@/lib/google/accounts";
+
+const getSchema = z.object({
+  account: z.string().min(1).optional(),
+});
 
 export async function GET(request: NextRequest) {
   const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
@@ -9,7 +14,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const account = request.nextUrl.searchParams.get("account") as AccountAlias | null;
+  const raw = Object.fromEntries(request.nextUrl.searchParams.entries());
+  const parsed = getSchema.safeParse(raw);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid parameters", details: parsed.error.flatten() }, { status: 400 });
+  }
+  const account = parsed.data.account as AccountAlias | undefined;
 
   try {
     if (account) {

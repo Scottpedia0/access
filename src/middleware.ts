@@ -1,0 +1,71 @@
+import { NextRequest, NextResponse } from "next/server";
+
+import {
+  checkAuthRateLimit,
+  checkApiRateLimit,
+  MAX_BODY_SIZE,
+} from "@/lib/middleware/rate-limit";
+
+function getClientIp(request: NextRequest): string {
+  return (
+    request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
+    request.headers.get("x-real-ip") ||
+    request.ip ||
+    "unknown"
+  );
+}
+
+export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const ip = getClientIp(request);
+
+  // --- Rate limiting: auth endpoints ------------------------------------
+  if (pathname.startsWith("/api/auth")) {
+    const { limited, retryAfterSeconds } = checkAuthRateLimit(ip);
+
+    if (limited) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        {
+          status: 429,
+          headers: { "Retry-After": String(retryAfterSeconds) },
+        },
+      );
+    }
+  }
+
+  // --- Rate limiting: proxy / v1 endpoints ------------------------------
+  if (pathname.startsWith("/api/v1")) {
+    const { limited, retryAfterSeconds } = checkApiRateLimit(ip);
+
+    if (limited) {
+      return NextResponse.json(
+        { error: "Too many requests. Please try again later." },
+        {
+          status: 429,
+          headers: { "Retry-After": String(retryAfterSeconds) },
+        },
+      );
+    }
+
+    // --- Body size limit for mutating methods ---------------------------
+    const method = request.method.toUpperCase();
+
+    if (method === "POST" || method === "PUT" || method === "PATCH") {
+      const contentLength = request.headers.get("content-length");
+
+      if (contentLength && parseInt(contentLength, 10) > MAX_BODY_SIZE) {
+        return NextResponse.json(
+          { error: "Payload Too Large. Maximum body size is 1 MB." },
+          { status: 413 },
+        );
+      }
+    }
+  }
+
+  return NextResponse.next();
+}
+
+export const config = {
+  matcher: ["/api/auth/:path*", "/api/v1/:path*"],
+};

@@ -16,8 +16,8 @@ const mono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Access Vault",
-    template: "%s | Access Vault",
+    default: "Access",
+    template: "%s | Access",
   },
   description: "Private sign-in portal.",
   robots: {

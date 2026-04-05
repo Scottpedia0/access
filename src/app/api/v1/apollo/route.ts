@@ -1,8 +1,37 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { isValidGlobalAgentToken } from "@/lib/env";
 
 const APOLLO_BASE = "https://api.apollo.io/v1";
 const APOLLO_KEY = process.env.APOLLO_API_KEY;
+
+const getSchema = z.object({
+  action: z.enum(["lists"]).default("lists"),
+});
+
+const postSchema = z.discriminatedUnion("action", [
+  z.object({
+    action: z.literal("search"),
+    limit: z.number().int().positive().max(100).optional().default(25),
+    q: z.string().optional(),
+    title: z.string().optional(),
+    company: z.string().optional(),
+    domain: z.string().optional(),
+    location: z.string().optional(),
+  }),
+  z.object({
+    action: z.literal("enrich"),
+    email: z.string().optional(),
+    domain: z.string().optional(),
+    first_name: z.string().optional(),
+    last_name: z.string().optional(),
+    linkedin_url: z.string().optional(),
+  }),
+  z.object({
+    action: z.literal("org_enrich"),
+    domain: z.string().optional(),
+  }),
+]);
 
 function auth(request: NextRequest): NextResponse | null {
   const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
@@ -53,17 +82,16 @@ export async function GET(request: NextRequest) {
   const denied = auth(request);
   if (denied) return denied;
 
-  const action = request.nextUrl.searchParams.get("action") ?? "search";
+  const raw = Object.fromEntries(request.nextUrl.searchParams.entries());
+  const parsed = getSchema.safeParse(raw);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid parameters", details: parsed.error.flatten() }, { status: 400 });
+  }
 
   try {
-    switch (action) {
+    switch (parsed.data.action) {
       case "lists":
         return NextResponse.json(await apolloGet("labels"));
-      default:
-        return NextResponse.json(
-          { error: `Unknown GET action: ${action}. Use: lists` },
-          { status: 400 }
-        );
     }
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
@@ -75,40 +103,39 @@ export async function POST(request: NextRequest) {
   if (denied) return denied;
 
   const body = await request.json();
-  const action = body.action ?? "search";
+  const parsed = postSchema.safeParse({ action: "search", ...body });
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid parameters", details: parsed.error.flatten() }, { status: 400 });
+  }
+  const data = parsed.data;
 
   try {
-    switch (action) {
+    switch (data.action) {
       case "search": {
         const searchBody: Record<string, unknown> = {
-          per_page: body.limit ?? 25,
+          per_page: data.limit,
         };
-        if (body.q) searchBody.q_keywords = body.q;
-        if (body.title) searchBody.person_titles = [body.title];
-        if (body.company) searchBody.q_organization_name = body.company;
-        if (body.domain) searchBody.organization_domains = [body.domain];
-        if (body.location) searchBody.person_locations = [body.location];
+        if (data.q) searchBody.q_keywords = data.q;
+        if (data.title) searchBody.person_titles = [data.title];
+        if (data.company) searchBody.q_organization_name = data.company;
+        if (data.domain) searchBody.organization_domains = [data.domain];
+        if (data.location) searchBody.person_locations = [data.location];
         return NextResponse.json(await apolloPost("mixed_people/search", searchBody));
       }
       case "enrich": {
         const enrichBody: Record<string, unknown> = {};
-        if (body.email) enrichBody.email = body.email;
-        if (body.domain) enrichBody.domain = body.domain;
-        if (body.first_name) enrichBody.first_name = body.first_name;
-        if (body.last_name) enrichBody.last_name = body.last_name;
-        if (body.linkedin_url) enrichBody.linkedin_url = body.linkedin_url;
+        if (data.email) enrichBody.email = data.email;
+        if (data.domain) enrichBody.domain = data.domain;
+        if (data.first_name) enrichBody.first_name = data.first_name;
+        if (data.last_name) enrichBody.last_name = data.last_name;
+        if (data.linkedin_url) enrichBody.linkedin_url = data.linkedin_url;
         return NextResponse.json(await apolloPost("people/match", enrichBody));
       }
       case "org_enrich": {
         const orgBody: Record<string, unknown> = {};
-        if (body.domain) orgBody.domain = body.domain;
+        if (data.domain) orgBody.domain = data.domain;
         return NextResponse.json(await apolloPost("organizations/enrich", orgBody));
       }
-      default:
-        return NextResponse.json(
-          { error: `Unknown POST action: ${action}. Use: search, enrich, org_enrich` },
-          { status: 400 }
-        );
     }
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });

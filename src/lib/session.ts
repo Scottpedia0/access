@@ -26,6 +26,6 @@ export function getAuditActorFromSession(session: Awaited<ReturnType<typeof getC
   return {
     actorType: ActorType.USER,
     actorId: session.user.id,
-    actorLabel: session.user.email ?? session.user.name ?? "Scott Moran",
+    actorLabel: session.user.email ?? session.user.name ?? "Owner",
   } as const;
 }

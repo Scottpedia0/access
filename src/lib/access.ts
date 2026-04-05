@@ -6,6 +6,36 @@ import { isValidGlobalAgentToken } from "@/lib/env";
 import { prisma } from "@/lib/prisma";
 import { extractTokenPrefix, verifyConsumerToken } from "@/lib/security/tokens";
 
+// ---------------------------------------------------------------------------
+// Audit logging for authentication failures
+// ---------------------------------------------------------------------------
+
+function getClientIp(request: NextRequest): string {
+  return (
+    request.headers.get("x-forwarded-for")?.split(",")[0].trim() ||
+    request.headers.get("x-real-ip") ||
+    request.ip ||
+    "unknown"
+  );
+}
+
+function logAuthFailure(request: NextRequest, reason: string, tokenPrefix?: string | null) {
+  const ip = getClientIp(request);
+  const endpoint = request.nextUrl.pathname;
+
+  console.warn(
+    JSON.stringify({
+      level: "warn",
+      event: "auth_failure",
+      reason,
+      ip,
+      endpoint,
+      tokenPrefix: tokenPrefix ? tokenPrefix.slice(0, 8) : null,
+      timestamp: new Date().toISOString(),
+    }),
+  );
+}
+
 type ConsumerWithGrants = Consumer & {
   accessGrants: AccessGrant[];
 };
@@ -76,6 +106,7 @@ export async function authenticateRequestActor(request: NextRequest): Promise<Re
     const consumer = await findConsumerByBearerToken(token);
 
     if (!consumer) {
+      logAuthFailure(request, "invalid_bearer_token", token);
       return null;
     }
 
@@ -93,6 +124,7 @@ export async function authenticateRequestActor(request: NextRequest): Promise<Re
   const session = await getCurrentSession();
 
   if (!session?.user?.id) {
+    logAuthFailure(request, "no_valid_session");
     return null;
   }
 

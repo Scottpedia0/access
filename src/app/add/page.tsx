@@ -26,7 +26,7 @@ export default async function AddKeyPage({
     <main className="min-h-screen bg-white px-6 py-10 text-stone-950 sm:px-8">
       <div className="mx-auto max-w-xl">
         <p className="text-[11px] font-semibold uppercase tracking-[0.26em] text-stone-400">
-          Access Vault
+          Access
         </p>
         <h1 className="mt-4 text-5xl font-semibold tracking-[-0.05em] text-stone-950">
           Drop a key

@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { isValidGlobalAgentToken } from "@/lib/env";
 
 const OURA_BASE = "https://api.ouraring.com/v2/usercollection";
 const OURA_TOKEN = process.env.OURA_PERSONAL_ACCESS_TOKEN;
+
+const getSchema = z.object({
+  action: z.enum(["daily_sleep", "daily_readiness", "daily_activity", "heartrate", "sleep", "personal_info"]).default("daily_sleep"),
+  start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Must be YYYY-MM-DD").optional(),
+  end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Must be YYYY-MM-DD").optional(),
+});
 
 function auth(request: NextRequest): NextResponse | null {
   const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
@@ -37,14 +44,17 @@ export async function GET(request: NextRequest) {
   const denied = auth(request);
   if (denied) return denied;
 
-  const action = request.nextUrl.searchParams.get("action") ?? "daily_sleep";
-  const startDate = request.nextUrl.searchParams.get("start_date") ?? "";
-  const endDate = request.nextUrl.searchParams.get("end_date") ?? "";
+  const raw = Object.fromEntries(request.nextUrl.searchParams.entries());
+  const parsed = getSchema.safeParse(raw);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid parameters", details: parsed.error.flatten() }, { status: 400 });
+  }
+  const { action, start_date, end_date } = parsed.data;
 
   try {
     const params: Record<string, string> = {};
-    if (startDate) params.start_date = startDate;
-    if (endDate) params.end_date = endDate;
+    if (start_date) params.start_date = start_date;
+    if (end_date) params.end_date = end_date;
 
     switch (action) {
       case "daily_sleep":
@@ -59,11 +69,6 @@ export async function GET(request: NextRequest) {
         return NextResponse.json(await ouraFetch("sleep", params));
       case "personal_info":
         return NextResponse.json(await ouraFetch("personal_info", {}));
-      default:
-        return NextResponse.json(
-          { error: `Unknown action: ${action}. Use: daily_sleep, daily_readiness, daily_activity, heartrate, sleep, personal_info` },
-          { status: 400 }
-        );
     }
   } catch (err) {
     return NextResponse.json(

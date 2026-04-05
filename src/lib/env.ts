@@ -40,7 +40,7 @@ export const hasOwnerPasswordAuth = Boolean(process.env.OWNER_LOGIN_PASSWORD);
 export const hasSharedIntakeToken = Boolean(process.env.SHARED_INTAKE_TOKEN?.trim());
 export const hasGlobalAgentToken = Boolean(process.env.GLOBAL_AGENT_TOKEN?.trim());
 
-export const appName = process.env.APP_NAME ?? "Access Vault";
+export const appName = process.env.APP_NAME ?? "Access";
 
 export function isAllowedOwnerEmail(email: string | null | undefined) {
   if (!email) {

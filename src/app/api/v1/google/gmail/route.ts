@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { authenticateGoogleRequest } from "@/lib/google/auth-middleware";
 import {
   searchMessages,
@@ -14,26 +15,82 @@ import {
   trashMessage,
 } from "@/lib/google/gmail";
 
+const getSchema = z.object({
+  action: z.enum(["search", "thread", "message", "labels", "drafts"]).default("search"),
+  q: z.string().optional().default("in:inbox"),
+  max: z.coerce.number().int().positive().max(500).optional().default(20),
+  threadId: z.string().min(1).optional(),
+  messageId: z.string().min(1).optional(),
+});
+
+const postSchema = z.discriminatedUnion("action", [
+  z.object({
+    action: z.literal("draft"),
+    account: z.string().optional(),
+    to: z.string().min(1),
+    subject: z.string().min(1),
+    body: z.string().min(1),
+    cc: z.string().optional(),
+    bcc: z.string().optional(),
+    inReplyTo: z.string().optional(),
+    threadId: z.string().optional(),
+    attachments: z.array(z.any()).optional(),
+  }),
+  z.object({
+    action: z.literal("send"),
+    account: z.string().optional(),
+    to: z.string().min(1),
+    subject: z.string().min(1),
+    body: z.string().min(1),
+    cc: z.string().optional(),
+    bcc: z.string().optional(),
+    inReplyTo: z.string().optional(),
+    threadId: z.string().optional(),
+    attachments: z.array(z.any()).optional(),
+  }),
+  z.object({
+    action: z.literal("send_draft"),
+    account: z.string().optional(),
+    draftId: z.string().min(1),
+  }),
+  z.object({
+    action: z.literal("delete_draft"),
+    account: z.string().optional(),
+    draftId: z.string().min(1),
+  }),
+  z.object({
+    action: z.literal("modify_labels"),
+    account: z.string().optional(),
+    messageId: z.string().min(1),
+    addLabelIds: z.array(z.string()).optional(),
+    removeLabelIds: z.array(z.string()).optional(),
+  }),
+  z.object({
+    action: z.literal("trash"),
+    account: z.string().optional(),
+    messageId: z.string().min(1),
+  }),
+]);
+
 export async function GET(request: NextRequest) {
   const auth = authenticateGoogleRequest(request);
   if (auth instanceof NextResponse) return auth;
 
-  const action = request.nextUrl.searchParams.get("action") ?? "search";
+  const raw = Object.fromEntries(request.nextUrl.searchParams.entries());
+  const parsed = getSchema.safeParse(raw);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid parameters", details: parsed.error.flatten() }, { status: 400 });
+  }
+  const { action, q, max, threadId, messageId } = parsed.data;
 
   try {
     switch (action) {
       case "search": {
-        const query = request.nextUrl.searchParams.get("q") ?? "in:inbox";
-        const max = parseInt(
-          request.nextUrl.searchParams.get("max") ?? "20",
-          10
-        );
-        const messages = await searchMessages(auth.account, query, max);
+        const messages = await searchMessages(auth.account, q, max);
         return NextResponse.json({ messages });
       }
 
       case "thread": {
-        const threadId = request.nextUrl.searchParams.get("threadId");
         if (!threadId)
           return NextResponse.json(
             { error: "threadId required" },
@@ -44,7 +101,6 @@ export async function GET(request: NextRequest) {
       }
 
       case "message": {
-        const messageId = request.nextUrl.searchParams.get("messageId");
         if (!messageId)
           return NextResponse.json(
             { error: "messageId required" },
@@ -60,19 +116,9 @@ export async function GET(request: NextRequest) {
       }
 
       case "drafts": {
-        const max = parseInt(
-          request.nextUrl.searchParams.get("max") ?? "20",
-          10
-        );
         const drafts = await listDrafts(auth.account, max);
         return NextResponse.json({ drafts });
       }
-
-      default:
-        return NextResponse.json(
-          { error: `Unknown action: ${action}` },
-          { status: 400 }
-        );
     }
   } catch (err) {
     return NextResponse.json(
@@ -84,23 +130,29 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
+
+  const parsed = postSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid parameters", details: parsed.error.flatten() }, { status: 400 });
+  }
+  const data = parsed.data;
+
   const auth = authenticateGoogleRequest(request, body.account);
   if (auth instanceof NextResponse) return auth;
-  const action = body.action;
 
   try {
-    switch (action) {
+    switch (data.action) {
       case "draft": {
         const result = await createDraft(
           auth.account,
-          body.to,
-          body.subject,
-          body.body,
-          body.cc,
-          body.bcc,
-          body.inReplyTo,
-          body.threadId,
-          body.attachments
+          data.to,
+          data.subject,
+          data.body,
+          data.cc,
+          data.bcc,
+          data.inReplyTo,
+          data.threadId,
+          data.attachments
         );
         return NextResponse.json(result);
       }
@@ -108,58 +160,42 @@ export async function POST(request: NextRequest) {
       case "send": {
         const result = await sendEmail(
           auth.account,
-          body.to,
-          body.subject,
-          body.body,
-          body.cc,
-          body.bcc,
-          body.inReplyTo,
-          body.threadId,
-          body.attachments
+          data.to,
+          data.subject,
+          data.body,
+          data.cc,
+          data.bcc,
+          data.inReplyTo,
+          data.threadId,
+          data.attachments
         );
         return NextResponse.json(result);
       }
 
       case "send_draft": {
-        if (!body.draftId)
-          return NextResponse.json(
-            { error: "draftId required" },
-            { status: 400 }
-          );
-        const result = await sendDraft(auth.account, body.draftId);
+        const result = await sendDraft(auth.account, data.draftId);
         return NextResponse.json(result);
       }
 
       case "delete_draft": {
-        if (!body.draftId)
-          return NextResponse.json(
-            { error: "draftId required" },
-            { status: 400 }
-          );
-        await deleteDraft(auth.account, body.draftId);
+        await deleteDraft(auth.account, data.draftId);
         return NextResponse.json({ ok: true });
       }
 
       case "modify_labels": {
         await modifyLabels(
           auth.account,
-          body.messageId,
-          body.addLabelIds,
-          body.removeLabelIds
+          data.messageId,
+          data.addLabelIds,
+          data.removeLabelIds
         );
         return NextResponse.json({ ok: true });
       }
 
       case "trash": {
-        await trashMessage(auth.account, body.messageId);
+        await trashMessage(auth.account, data.messageId);
         return NextResponse.json({ ok: true });
       }
-
-      default:
-        return NextResponse.json(
-          { error: `Unknown action: ${action}` },
-          { status: 400 }
-        );
     }
   } catch (err) {
     return NextResponse.json(

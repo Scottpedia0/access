@@ -73,7 +73,7 @@ export default async function SettingsPage() {
       <PageHeader
         eyebrow="Settings"
         title="Runtime posture"
-        description="A quick view of the Access Vault environment, auth posture, and the moving parts that matter in production."
+        description="A quick view of the Access environment, auth posture, and the moving parts that matter in production."
       />
 
       <div className="grid gap-4 lg:grid-cols-3">

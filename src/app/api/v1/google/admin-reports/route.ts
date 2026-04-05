@@ -1,52 +1,59 @@
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { authenticateGoogleRequest } from "@/lib/google/auth-middleware";
 import { getUserUsageReport, listActivities } from "@/lib/google/admin-reports";
 
-function parseMax(value: string | null, fallback: number) {
-  if (!value) return fallback;
-  const parsed = Number.parseInt(value, 10);
-  return Number.isFinite(parsed) ? parsed : fallback;
-}
+const getSchema = z.object({
+  action: z.enum(["activities", "usage"]).default("activities"),
+  applicationName: z.string().optional().default("login"),
+  userKey: z.string().optional().default("all"),
+  max: z.coerce.number().int().positive().max(1000).optional().default(100),
+  startTime: z.string().optional(),
+  endTime: z.string().optional(),
+  eventName: z.string().optional(),
+  filters: z.string().optional(),
+  actorIpAddress: z.string().optional(),
+  customerId: z.string().optional(),
+  orgUnitId: z.string().optional(),
+  groupIdFilter: z.string().optional(),
+  pageToken: z.string().optional(),
+  date: z.string().optional(),
+  parameters: z.string().optional(),
+});
 
 export async function GET(request: NextRequest) {
   const auth = authenticateGoogleRequest(request);
   if (auth instanceof NextResponse) return auth;
 
-  const action = request.nextUrl.searchParams.get("action") ?? "activities";
+  const raw = Object.fromEntries(request.nextUrl.searchParams.entries());
+  const parsed = getSchema.safeParse(raw);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Invalid parameters", details: parsed.error.flatten() }, { status: 400 });
+  }
+  const p = parsed.data;
 
   try {
-    switch (action) {
+    switch (p.action) {
       case "activities": {
-        const applicationName =
-          request.nextUrl.searchParams.get("applicationName") ?? "login";
         const data = await listActivities(auth.account, {
-          applicationName,
-          userKey: request.nextUrl.searchParams.get("userKey") ?? "all",
-          maxResults: parseMax(
-            request.nextUrl.searchParams.get("max"),
-            100
-          ),
-          startTime: request.nextUrl.searchParams.get("startTime") ?? undefined,
-          endTime: request.nextUrl.searchParams.get("endTime") ?? undefined,
-          eventName: request.nextUrl.searchParams.get("eventName") ?? undefined,
-          filters: request.nextUrl.searchParams.get("filters") ?? undefined,
-          actorIpAddress:
-            request.nextUrl.searchParams.get("actorIpAddress") ?? undefined,
-          customerId:
-            request.nextUrl.searchParams.get("customerId") ?? undefined,
-          orgUnitId:
-            request.nextUrl.searchParams.get("orgUnitId") ?? undefined,
-          groupIdFilter:
-            request.nextUrl.searchParams.get("groupIdFilter") ?? undefined,
-          pageToken:
-            request.nextUrl.searchParams.get("pageToken") ?? undefined,
+          applicationName: p.applicationName,
+          userKey: p.userKey,
+          maxResults: p.max,
+          startTime: p.startTime ?? undefined,
+          endTime: p.endTime ?? undefined,
+          eventName: p.eventName ?? undefined,
+          filters: p.filters ?? undefined,
+          actorIpAddress: p.actorIpAddress ?? undefined,
+          customerId: p.customerId ?? undefined,
+          orgUnitId: p.orgUnitId ?? undefined,
+          groupIdFilter: p.groupIdFilter ?? undefined,
+          pageToken: p.pageToken ?? undefined,
         });
         return NextResponse.json(data);
       }
 
       case "usage": {
-        const date = request.nextUrl.searchParams.get("date");
-        if (!date) {
+        if (!p.date) {
           return NextResponse.json(
             { error: "date required for usage action (YYYY-MM-DD)" },
             { status: 400 }
@@ -54,25 +61,14 @@ export async function GET(request: NextRequest) {
         }
 
         const data = await getUserUsageReport(auth.account, {
-          userKey: request.nextUrl.searchParams.get("userKey") ?? "all",
-          date,
-          maxResults: parseMax(
-            request.nextUrl.searchParams.get("max"),
-            100
-          ),
-          parameters:
-            request.nextUrl.searchParams.get("parameters") ?? undefined,
-          pageToken:
-            request.nextUrl.searchParams.get("pageToken") ?? undefined,
+          userKey: p.userKey,
+          date: p.date,
+          maxResults: p.max,
+          parameters: p.parameters ?? undefined,
+          pageToken: p.pageToken ?? undefined,
         });
         return NextResponse.json(data);
       }
-
-      default:
-        return NextResponse.json(
-          { error: `Unknown action: ${action}` },
-          { status: 400 }
-        );
     }
   } catch (err) {
     const details = String(err);
