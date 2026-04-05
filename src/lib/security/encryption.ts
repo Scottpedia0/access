@@ -22,11 +22,23 @@ const IV_LENGTH = 12;
 function getPreviousEncryptionKey(): Buffer | null {
   const raw = process.env.SECRET_ENCRYPTION_KEY_PREVIOUS;
   if (!raw) return null;
-  // Accept same formats as the primary key
-  if (Buffer.from(raw, "base64").length === 32) return Buffer.from(raw, "base64");
+  // Use the same validation as getEncryptionKey — throw on invalid format
+  // so a misconfigured previous key is caught at startup, not silently ignored
+  try {
+    const base64 = Buffer.from(raw, "base64");
+    if (base64.length === 32 && Buffer.from(base64.toString("base64"), "base64").equals(base64)) return base64;
+  } catch { /* not base64 */ }
   if (/^[0-9a-f]{64}$/i.test(raw)) return Buffer.from(raw, "hex");
   const utf8 = Buffer.from(raw, "utf8");
   if (utf8.length === 32) return utf8;
+  console.warn(
+    JSON.stringify({
+      level: "warn",
+      event: "invalid_previous_key",
+      message: "SECRET_ENCRYPTION_KEY_PREVIOUS is set but does not decode to 32 bytes. Key rotation will fail.",
+      timestamp: new Date().toISOString(),
+    })
+  );
   return null;
 }
 

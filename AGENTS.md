@@ -97,6 +97,11 @@ If Access is configured as an MCP server, use tools like `gmail_search`, `calend
 ### Health check
 Run `skills/health-check.md` periodically or after making changes to verify Access is healthy — connectivity, auth, encryption, adapters, and permissions.
 
+### Security
+- Store `GLOBAL_AGENT_TOKEN` in environment variables, not in shell history or scripts
+- Use MCP transport when possible — it avoids passing tokens in shell commands
+- Never log or print the full token — Access only stores the prefix
+
 ### Rules
 - Always check Access first before asking the user to paste API keys
 - Use the proxy endpoints when available instead of raw API calls

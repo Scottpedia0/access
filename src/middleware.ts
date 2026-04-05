@@ -51,6 +51,33 @@ export function middleware(request: NextRequest) {
     }
   }
 
+  // --- Auth gate: require credentials on all /api/v1/* routes -----------
+  // This ensures no route can accidentally ship without auth.
+  // Route handlers still do the actual validation (token validity, grants,
+  // etc.), but this catches the "forgot to add auth check" case.
+  if (pathname.startsWith("/api/v1")) {
+    const hasAuthHeader = !!request.headers.get("authorization");
+    const hasSessionCookie = request.cookies.has("next-auth.session-token") ||
+      request.cookies.has("__Secure-next-auth.session-token");
+
+    if (!hasAuthHeader && !hasSessionCookie) {
+      console.warn(
+        JSON.stringify({
+          level: "warn",
+          event: "auth_missing",
+          message: "Request to /api/v1/* with no Authorization header or session cookie",
+          path: pathname,
+          ip,
+          timestamp: new Date().toISOString(),
+        })
+      );
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+  }
+
   // --- Body size limit for mutating methods -----------------------------
   // NOTE: This Content-Length check is an extra layer, not the only one.
   // Next.js enforces body limits at the framework level (default 1 MB for

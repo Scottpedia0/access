@@ -78,10 +78,13 @@ echo ""
 
 # ── MCP config block (shared across all clients) ──────────────────────────
 
+# Sanitize repo path for JSON embedding (escape backslashes and quotes)
+SAFE_REPO_DIR=$(printf '%s' "$REPO_DIR" | sed 's/\\/\\\\/g; s/"/\\"/g')
+
 MCP_BLOCK='{
     "access": {
       "command": "node",
-      "args": ["'"$REPO_DIR"'/mcp-server.mjs"],
+      "args": ["'"$SAFE_REPO_DIR"'/mcp-server.mjs"],
       "env": {
         "ACCESS_BASE_URL": "http://localhost:3000",
         "GLOBAL_AGENT_TOKEN": "your-token-here"
