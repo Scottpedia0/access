@@ -28,12 +28,12 @@ curl -s -H "Authorization: Bearer $GLOBAL_AGENT_TOKEN" "$ACCESS_BASE_URL/api/v1/
 Expected: JSON with `actor`, `env`, `services` fields. If you get `401`, your token is invalid or revoked.
 
 ### 3. Encryption integrity
-Pull any known secret (NOT the encryption key itself) and verify it decrypts:
+Verify that secrets decrypt without errors (check HTTP status, don't print the value):
 ```bash
-# Use any env var name you know exists in your store
-curl -s -H "Authorization: Bearer $GLOBAL_AGENT_TOKEN" "$ACCESS_BASE_URL/api/v1/secrets/by-env/SOME_KNOWN_SECRET"
+curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $GLOBAL_AGENT_TOKEN" \
+  "$ACCESS_BASE_URL/api/v1/bootstrap"
 ```
-Expected: a JSON response with a `value` field. If you get a decryption error, your encryption key may have rotated without running the migration script. Run `npx tsx scripts/rotate-keys.ts`.
+Expected: `200`. If you get `500` with a decryption error in the server logs, your encryption key may have rotated without running the migration script. Run `npx tsx scripts/rotate-keys.ts`.
 
 ### 4. Service adapter spot check
 Pick 2-3 services and verify they respond (not necessarily with data — just that the adapter loads and auth works):
