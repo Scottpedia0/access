@@ -107,6 +107,14 @@ Access ships with proxy adapters that handle auth and forward requests to upstre
 | **Oura Ring** | `/api/v1/oura` | Personal access token |
 | **Porkbun** | `/api/v1/porkbun` | API key + secret |
 | **Vercel** | `/api/v1/vercel` | Personal token |
+| **GitHub** | `/api/v1/github` | Personal access token |
+| **Linear** | `/api/v1/linear` | API key |
+| **Jira** | `/api/v1/jira` | Email + API token |
+| **GitLab** | `/api/v1/gitlab` | Personal access token |
+| **Notion** | `/api/v1/notion` | Internal integration token |
+| **AWS** | `/api/v1/aws` | IAM access key + secret |
+| **Sentry** | `/api/v1/sentry` | Auth token |
+| **Stripe** | `/api/v1/stripe` | Secret key (read-only) |
 
 Google services support **multiple accounts** — configure via the `GOOGLE_ACCOUNTS` env var (e.g., `work:me@company.com,personal:me@gmail.com`).
 
@@ -203,39 +211,10 @@ curl -H "Authorization: Bearer $TOKEN" \
 
 ```mermaid
 flowchart LR
-    subgraph Agents
-        A1[Claude Code]
-        A2[Cursor]
-        A3[Gemini CLI]
-        A4[Codex]
-        A5[Custom scripts]
-    end
-
-    subgraph Access["Access (Next.js)"]
-        direction TB
-        MW[Middleware\nRate limit · Body limit · Auth]
-        PROXY[Proxy Routes\n/api/v1/*]
-        AUTH[Token Auth\nGlobal · Consumer · Intake]
-        STORE[(Postgres\nEncrypted secrets\nOAuth tokens\nAudit log)]
-        MW --> PROXY
-        PROXY --> AUTH
-        AUTH --> STORE
-    end
-
-    subgraph Services
-        G[Google APIs\nGmail · Calendar · Drive\nSheets · Docs · Contacts]
-        H[HubSpot]
-        S[Slack]
-        CF[Cloudflare]
-        MORE[+ 5 more]
-    end
-
-    A1 & A2 & A3 & A4 & A5 -->|Bearer Token| MW
-    PROXY -->|OAuth 2.0\ntoken refresh| G
-    PROXY -->|API Key| H
-    PROXY -->|Bot Token| S
-    PROXY -->|API Token| CF
-    PROXY -->|Various| MORE
+    A[Any MCP client\nor HTTP caller] -->|Bearer token| B["Access\n(Next.js + Postgres)"]
+    B -->|OAuth 2.0| C[Google · GitHub · Sentry · Oura]
+    B -->|API key| D[HubSpot · Linear · Jira · Stripe\nNotion · Apollo · Cal · Porkbun]
+    B -->|Token| E[Slack · Cloudflare · Vercel\nGitLab · AWS]
 ```
 
 ### How a request flows
