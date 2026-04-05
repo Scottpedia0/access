@@ -6,11 +6,12 @@
 #   bash scripts/install.sh
 #
 # What it does:
-#   1. Detects which agent harnesses are installed
-#   2. Installs the health-check skill where supported
-#   3. Shows MCP config for each detected client
+#   1. Checks for common agent harnesses on this machine
+#   2. Copies the health-check skill file where supported (Y/n per harness)
+#   3. Prints the MCP config JSON you need to add manually per client
 #   4. Points you to the agent instruction block in AGENTS.md
 #
+# This script does NOT auto-modify your MCP configs — it shows you what to add.
 # You can reject any step — nothing runs without confirmation.
 
 set -euo pipefail

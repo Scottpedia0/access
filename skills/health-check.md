@@ -21,11 +21,12 @@ curl -s -o /dev/null -w "%{http_code}" "$ACCESS_BASE_URL/api/health"
 Expected: `200`. If you get anything else, the server is down or unreachable.
 
 ### 2. Authentication
-Verify your token works:
+Verify your token works (check status code only — bootstrap response contains secrets):
 ```bash
-curl -s -H "Authorization: Bearer $GLOBAL_AGENT_TOKEN" "$ACCESS_BASE_URL/api/v1/bootstrap" | head -c 200
+curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $GLOBAL_AGENT_TOKEN" \
+  "$ACCESS_BASE_URL/api/v1/bootstrap"
 ```
-Expected: JSON with `actor`, `env`, `services` fields. If you get `401`, your token is invalid or revoked.
+Expected: `200`. If you get `401`, your token is invalid or revoked.
 
 ### 3. Encryption integrity
 Verify that secrets decrypt without errors (check HTTP status, don't print the value):
@@ -36,18 +37,21 @@ curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $GLOBAL_AGENT_T
 Expected: `200`. If you get `500` with a decryption error in the server logs, your encryption key may have rotated without running the migration script. Run `npx tsx scripts/rotate-keys.ts`.
 
 ### 4. Service adapter spot check
-Pick 2-3 services and verify they respond (not necessarily with data — just that the adapter loads and auth works):
+Pick 2-3 services and verify they respond (check status code, not response body):
 ```bash
 # Google (if configured)
-curl -s -H "Authorization: Bearer $GLOBAL_AGENT_TOKEN" "$ACCESS_BASE_URL/api/v1/google/profile" | head -c 200
+curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $GLOBAL_AGENT_TOKEN" \
+  "$ACCESS_BASE_URL/api/v1/google/profile"
 
 # GitHub (if configured)
-curl -s -H "Authorization: Bearer $GLOBAL_AGENT_TOKEN" "$ACCESS_BASE_URL/api/v1/github?action=repos&limit=1" | head -c 200
+curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $GLOBAL_AGENT_TOKEN" \
+  "$ACCESS_BASE_URL/api/v1/github?action=repos&limit=1"
 
 # HubSpot (if configured)
-curl -s -H "Authorization: Bearer $GLOBAL_AGENT_TOKEN" "$ACCESS_BASE_URL/api/v1/hubspot?action=owners" | head -c 200
+curl -s -o /dev/null -w "%{http_code}" -H "Authorization: Bearer $GLOBAL_AGENT_TOKEN" \
+  "$ACCESS_BASE_URL/api/v1/hubspot?action=owners"
 ```
-Expected: JSON response or a clear error like `"GITHUB_TOKEN not set"` (meaning the adapter works but isn't configured). A 500 with no message means something is broken.
+Expected: `200` means the adapter works. `500` means the adapter loaded but the upstream call failed (check env vars). `401` means auth failed.
 
 ### 5. Consumer permissions
 Verify that scoped consumers only see what they should:
