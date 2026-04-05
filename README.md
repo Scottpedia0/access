@@ -3,6 +3,8 @@
 > "It's kind of a nifty little utility."
 > — me
 >
+> Once in a while you need to remind an agent it exists when they say they can't access something. 
+
 > Everything below this line was drafted by the bots.
 
 One Bearer token, all your services.
