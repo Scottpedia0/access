@@ -19,12 +19,13 @@ flowchart LR
 
 ## What it does
 
-You put every credential in it — API keys, OAuth tokens, passwords, service secrets, whatever your agents and scripts need. Then:
+You put every credential in it — API keys, OAuth tokens, bot tokens, agent credentials, service secrets, whatever your agents and scripts need. Then:
 
 - **Stores everything encrypted** — AES-256-GCM at rest, HMAC-hashed access tokens, audit trail on every read
 - **Handles OAuth** — token refresh, consent flows, multi-account Google — your agent never participates
 - **Proxies API calls** — for services with adapters, agents hit Access and get JSON back without ever seeing the underlying key
 - **Serves credentials directly** — for everything else, agents pull keys via `/bootstrap` or `/secrets/by-env/WHATEVER`
+- **Agents access agents** — store bot tokens, agent endpoints, internal service keys. Agent A authenticates with Access, gets credentials for Agent B.
 - **Logs everything** — every secret access, every API call, every auth attempt, with actor and IP
 - **Bootstraps sessions** — one `/bootstrap` call gives an agent all its env vars, docs, and context at once
 
@@ -46,6 +47,7 @@ With MCP, your agent gets tools like `gmail_search`, `calendar_list`, `drive_lis
 
 **Good fit:**
 - Running AI agents (Claude Code, Cursor, Gemini CLI, Codex) across multiple sessions or machines
+- Multi-agent setups where agents need credentials for other agents, bots, and internal services
 - Self-hosted personal or small-team setups
 - Multi-service workflows where agents need Gmail, Slack, GitHub, etc.
 - Anyone tired of bootstrapping agent sessions with scattered `.env` files
