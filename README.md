@@ -165,6 +165,14 @@ npm run dev
 
 Visit `http://localhost:3000` and sign in with an email from your `OWNER_EMAILS` list.
 
+### 6. Install agent skill + MCP config
+
+```bash
+bash scripts/install.sh
+```
+
+This installs the health-check skill into your Claude Code commands and walks you through MCP setup. You can accept or reject each step.
+
 ## Supported Services
 
 27 service endpoints across `/api/v1/*`. Each adapter handles auth and proxies requests upstream.
