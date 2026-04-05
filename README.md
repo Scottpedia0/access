@@ -6,20 +6,20 @@ One Bearer token, all your services. Your agents never touch OAuth tokens, API k
 
 ## What is this?
 
-Access is an **MCP-native API gateway** that combines a credential vault, API proxy, and MCP server into a single self-hosted Next.js app. Agents authenticate with a single Bearer token and hit proxy endpoints like `/api/v1/google/gmail?action=search&q=...` -- the vault handles OAuth, token refresh, and forwards the request to the upstream API. The agent never sees or manages credentials directly.
+Access is an **MCP-native API gateway** that combines a credential store, API proxy, and MCP server into a single self-hosted Next.js app. Agents authenticate with a single Bearer token and hit proxy endpoints like `/api/v1/google/gmail?action=search&q=...` — Access handles OAuth, token refresh, and forwards the request upstream. The agent never sees or manages credentials directly.
 
-Unlike platforms like Composio or Nango, Access is fully self-hosted, the agent does not participate in auth flows, and it works as a Claude Code MCP server out of the box.
+Unlike platforms like Composio or Nango, Access is fully self-hosted, the agent does not participate in auth flows, and it works as an MCP server with Claude Code, Cursor, Gemini CLI, Codex, Windsurf, and any other MCP-compatible client out of the box.
 
-## Why not just use .env files?
+## Why not just use `.env` files?
 
 Env files break down quickly when you have multiple agents, multiple machines, and services that use OAuth:
 
-- **OAuth tokens expire.** Someone has to refresh them. With env files, that someone is you -- manually, every hour.
-- **Credentials scatter.** Each agent session needs its own copy. Rotate a key and you update 6 places.
-- **No audit trail.** Which agent accessed which service? When? You have no idea.
-- **Bootstrapping is painful.** Every new session starts with `source ~/.env-that-has-everything` and a prayer.
+- **OAuth tokens expire.** Google access tokens last 60 minutes. Your agent can't refresh them — but Access can.
+- **Credentials scatter.** Each agent session needs its own copy. Rotate a key and you're updating it in 6 places.
+- **No audit trail.** Which agent accessed which service? When? From where? You have no idea.
+- **Bootstrapping is painful.** Every new session starts with loading env vars and hoping nothing expired.
 
-Access solves all of these. Agents call one URL with one token. The vault refreshes OAuth, proxies the API, logs the access, and returns the result.
+Access solves all of these. Agents call one URL with one token. Access refreshes OAuth, proxies the API, logs the access, and returns the result.
 
 ## Quick Start
 
@@ -27,7 +27,7 @@ Access solves all of these. Agents call one URL with one token. The vault refres
 
 - Node.js 20+
 - PostgreSQL (or use the included Docker Compose)
-- A Google Cloud OAuth app (for Google API proxy features)
+- A Google Cloud OAuth app (if you want Google API proxying)
 
 ### 1. Clone and install
 
@@ -82,11 +82,23 @@ Visit `http://localhost:3000` and sign in with an email from your `OWNER_EMAILS`
 
 ## Supported Services
 
-Access ships with proxy adapters for:
+### Service Proxy Adapters
+
+Access ships with proxy adapters that handle auth and forward requests to upstream APIs:
 
 | Service | Endpoint | Auth Type |
 |---------|----------|-----------|
-| **Google Workspace** (Gmail, Calendar, Drive, Sheets, Docs, Contacts, Analytics, Search Console, Tag Manager, Admin Reports, YouTube) | `/api/v1/google/*` | OAuth 2.0 (multi-account) |
+| **Gmail** | `/api/v1/google/gmail` | OAuth 2.0 |
+| **Google Calendar** | `/api/v1/google/calendar` | OAuth 2.0 |
+| **Google Drive** | `/api/v1/google/drive` | OAuth 2.0 |
+| **Google Sheets** | `/api/v1/google/sheets` | OAuth 2.0 |
+| **Google Docs** | `/api/v1/google/docs` | OAuth 2.0 |
+| **Google Contacts** | `/api/v1/google/contacts` | OAuth 2.0 |
+| **Google Analytics** | `/api/v1/google/analytics` | OAuth 2.0 |
+| **Google Search Console** | `/api/v1/google/search-console` | OAuth 2.0 |
+| **Google Tag Manager** | `/api/v1/google/tag-manager` | OAuth 2.0 |
+| **Google Admin Reports** | `/api/v1/google/admin-reports` | OAuth 2.0 |
+| **Google Account Profile** | `/api/v1/google/profile` | OAuth 2.0 |
 | **HubSpot** | `/api/v1/hubspot` | Private app token |
 | **Slack** | `/api/v1/slack` | Bot token |
 | **Cloudflare** | `/api/v1/cloudflare` | API token |
@@ -96,64 +108,68 @@ Access ships with proxy adapters for:
 | **Porkbun** | `/api/v1/porkbun` | API key + secret |
 | **Vercel** | `/api/v1/vercel` | Personal token |
 
-The Google adapter supports **multiple accounts** simultaneously -- configure them via the `GOOGLE_ACCOUNTS` env var (e.g., `work:me@company.com,personal:me@gmail.com`).
+Google services support **multiple accounts** — configure via the `GOOGLE_ACCOUNTS` env var (e.g., `work:me@company.com,personal:me@gmail.com`).
+
+### Core Endpoints
+
+These aren't service proxies — they're Access itself:
+
+| Endpoint | What it does |
+|----------|-------------|
+| `GET /api/v1/bootstrap` | One pull that returns all secrets as env vars + service metadata + docs + linked resources. This is how agents bootstrap a session. |
+| `POST /api/v1/intake` | Write-only endpoint for submitting new credentials without read access to the store. |
+| `GET /api/v1/secrets/by-env/:name` | Look up a single decrypted secret by its env var name. |
+| `GET /api/v1/services/:slug` | Service metadata, docs, and linked resources. |
+| `GET /api/v1/services/:slug/secrets` | Decrypted secrets for a specific service. |
 
 ## Authentication
 
-Access supports three methods for agent authentication:
+Access supports three token types for agent authentication:
 
-1. **Global Agent Token** -- A single Bearer token that grants access to all services. Best for trusted single-operator setups.
-2. **Consumer Tokens** -- Per-agent tokens with granular access grants. Use when you want different agents to have different permissions.
-3. **Shared Intake Token** -- A special token for a no-login key drop page where team members can submit credentials.
+| Token Type | Scope | Use case |
+|-----------|-------|----------|
+| **Global Agent Token** | Full access to all services and secrets | Trusted single-operator setups |
+| **Consumer Tokens** | Granular per-service or per-secret access grants | Multi-agent setups where each agent gets different permissions |
+| **Shared Intake Token** | Write-only credential submission | Let team members drop keys without read access |
 
 ```bash
-# Agent request with global token
-curl -H "Authorization: Bearer YOUR_GLOBAL_TOKEN" \
-  "http://localhost:3000/api/v1/google/gmail?action=search&q=from:someone@example.com&account=work"
+# Search Gmail with a global token
+curl -H "Authorization: Bearer YOUR_TOKEN" \
+  "http://localhost:3000/api/v1/google/gmail?action=search&q=from:alice&account=work"
 
-# Bootstrap: pull all secrets at once
-curl -H "Authorization: Bearer YOUR_GLOBAL_TOKEN" \
+# Bootstrap an agent session — pull everything at once
+curl -H "Authorization: Bearer YOUR_TOKEN" \
   "http://localhost:3000/api/v1/bootstrap"
 ```
 
+Human authentication for the admin UI uses Google OAuth, email magic links, or a simple password — configured via env vars. Only emails in `OWNER_EMAILS` can log in.
+
 ## Adding a New Service
 
-Each proxy endpoint is a Next.js route handler in `src/app/api/v1/<service>/route.ts`. To add a new service:
+Each proxy adapter is a Next.js route handler under `src/app/api/v1/<service>/route.ts`. To add one:
 
-1. Create the route file at `src/app/api/v1/your-service/route.ts`
+1. Create `src/app/api/v1/your-service/route.ts`
 2. Use `authenticateRequestActor()` from `@/lib/access` for auth
-3. Read the API key from the vault (via Prisma) or env vars
+3. Read the API key from the encrypted store (via Prisma) or env vars
 4. Proxy the request to the upstream API
 5. Return the result
 
-See any existing adapter (e.g., `src/app/api/v1/hubspot/route.ts`) as a template.
+Most adapters are under 100 lines. See `src/app/api/v1/hubspot/route.ts` for a clean example.
 
 ## MCP Server
 
-Access includes a standalone MCP server (`mcp-server.mjs`) that exposes all Google Workspace tools via the stdio transport. Works with any MCP-compatible client.
+Access includes an MCP server (`mcp-server.mjs`) that exposes Google Workspace tools via stdio transport. Works with any MCP-compatible client.
 
-### Claude Code
+Add the following config to your client. The JSON is the same — only the file path changes per client:
 
-Add to `~/.claude/mcp.json` or your project's `.mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "access": {
-      "command": "node",
-      "args": ["/path/to/access/mcp-server.mjs"],
-      "env": {
-        "ACCESS_BASE_URL": "http://localhost:3000",
-        "GLOBAL_AGENT_TOKEN": "your-token-here"
-      }
-    }
-  }
-}
-```
-
-### Gemini CLI
-
-Add to `.gemini/settings.json`:
+| Client | Config location |
+|--------|----------------|
+| **Claude Code** | `~/.claude/mcp.json` or project `.mcp.json` |
+| **Cursor** | Cursor MCP settings |
+| **Gemini CLI** | `.gemini/settings.json` |
+| **Windsurf** | Windsurf MCP settings |
+| **VS Code (Copilot)** | `.vscode/mcp.json` (use `"servers"` instead of `"mcpServers"`) |
+| **Codex / other** | Any MCP-compatible config |
 
 ```json
 {
@@ -170,68 +186,18 @@ Add to `.gemini/settings.json`:
 }
 ```
 
-### Cursor
+> **VS Code note:** Use `"servers"` as the top-level key instead of `"mcpServers"`.
 
-Add to your Cursor MCP settings:
+Once connected, your agent gets tools like `gmail_search`, `calendar_list`, `drive_list`, `contacts_search`, and more — all authenticated through Access.
 
-```json
-{
-  "mcpServers": {
-    "access": {
-      "command": "node",
-      "args": ["/path/to/access/mcp-server.mjs"],
-      "env": {
-        "ACCESS_BASE_URL": "http://localhost:3000",
-        "GLOBAL_AGENT_TOKEN": "your-token-here"
-      }
-    }
-  }
-}
+### Direct API (No MCP)
+
+You don't need MCP. Any HTTP client works:
+
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+  "http://localhost:3000/api/v1/google/gmail?action=search&q=is:unread"
 ```
-
-### Windsurf
-
-Same config pattern as Cursor -- add to Windsurf's MCP settings:
-
-```json
-{
-  "mcpServers": {
-    "access": {
-      "command": "node",
-      "args": ["/path/to/access/mcp-server.mjs"],
-      "env": {
-        "ACCESS_BASE_URL": "http://localhost:3000",
-        "GLOBAL_AGENT_TOKEN": "your-token-here"
-      }
-    }
-  }
-}
-```
-
-### VS Code (GitHub Copilot)
-
-Add to `.vscode/mcp.json` in your project:
-
-```json
-{
-  "servers": {
-    "access": {
-      "command": "node",
-      "args": ["/path/to/access/mcp-server.mjs"],
-      "env": {
-        "ACCESS_BASE_URL": "http://localhost:3000",
-        "GLOBAL_AGENT_TOKEN": "your-token-here"
-      }
-    }
-  }
-}
-```
-
-### Codex / Any MCP Client
-
-Same config pattern -- the server uses stdio transport. Set `GLOBAL_AGENT_TOKEN` and `ACCESS_BASE_URL` as environment variables, point the command at `mcp-server.mjs`.
-
-Once connected, your agent gets tools like `gmail_search`, `calendar_list`, `drive_list`, `contacts_search`, and more — all authenticated through the vault.
 
 ## Architecture
 
@@ -250,10 +216,10 @@ flowchart LR
         MW[Middleware\nRate limit · Body limit · Auth]
         PROXY[Proxy Routes\n/api/v1/*]
         AUTH[Token Auth\nGlobal · Consumer · Intake]
-        VAULT[(Postgres\nEncrypted secrets\nOAuth tokens\nAudit log)]
+        STORE[(Postgres\nEncrypted secrets\nOAuth tokens\nAudit log)]
         MW --> PROXY
         PROXY --> AUTH
-        AUTH --> VAULT
+        AUTH --> STORE
     end
 
     subgraph Services
@@ -304,16 +270,19 @@ flowchart LR
 
 - AES-256-GCM encryption for all stored secrets
 - HMAC-SHA256 consumer token hashing with constant-time comparison
-- Audit logging for all access events
+- Zod input validation on all API endpoints
+- Audit logging for all access events and auth failures
 - Owner email allowlist for admin UI access
 - Error messages in production never leak upstream details
 - Health endpoint requires auth to expose inventory counts
+- Rate limiting on auth and API endpoints (configurable, in-memory by default)
+- Request body size limits on all mutating endpoints
 
 ### Security Roadmap
 
 - [ ] Per-service scoped tokens (split global token into granular permissions)
 - [ ] Key rotation support
-- [ ] Rate limiting on auth and proxy endpoints
+- [ ] Redis-backed rate limiting for serverless
 - [ ] Envelope encryption / KMS integration
 
 ## Deployment
@@ -323,11 +292,11 @@ Access deploys well on **Vercel** with a **Neon** or **Supabase** Postgres datab
 1. Push to GitHub
 2. Import in Vercel
 3. Set all env vars from `.env.example`
-4. Set the `NEXTAUTH_URL` to your production URL
+4. Set `NEXTAUTH_URL` to your production URL
 5. Add `your-domain.com/api/google/callback` as an authorized redirect URI in Google Cloud Console
 6. Run `npx prisma migrate deploy` via Vercel build command
 
-The `prisma.config.ts` is configured with the `rhel-openssl-3.0.x` binary target for serverless environments.
+Works anywhere Node.js runs — Vercel, Railway, Fly.io, a VPS, your laptop.
 
 ## Development
 
