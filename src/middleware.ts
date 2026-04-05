@@ -56,11 +56,12 @@ export function middleware(request: NextRequest) {
   // Route handlers still do the actual validation (token validity, grants,
   // etc.), but this catches the "forgot to add auth check" case.
   if (pathname.startsWith("/api/v1")) {
-    const hasAuthHeader = !!request.headers.get("authorization");
+    const authHeader = request.headers.get("authorization") ?? "";
+    const hasValidAuthHeader = /^Bearer\s+\S+/i.test(authHeader);
     const hasSessionCookie = request.cookies.has("next-auth.session-token") ||
       request.cookies.has("__Secure-next-auth.session-token");
 
-    if (!hasAuthHeader && !hasSessionCookie) {
+    if (!hasValidAuthHeader && !hasSessionCookie) {
       console.warn(
         JSON.stringify({
           level: "warn",

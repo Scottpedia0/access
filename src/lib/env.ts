@@ -123,6 +123,18 @@ export function isValidSharedIntakeToken(value: string | null | undefined) {
   return timingSafeEqual(expectedBuffer, candidateBuffer);
 }
 
+/**
+ * Build the shared intake URL with the token as a query parameter.
+ *
+ * Security note: The intake token appears in the URL, which means it can
+ * leak via server access logs, browser history, and HTTP Referer headers.
+ * This is an accepted trade-off because:
+ *   - The intake token is WRITE-ONLY — it cannot read secrets
+ *   - The /add page is designed for quick credential drops by team members
+ *   - The alternative (POST-only flow) would require a separate auth step
+ * If this trade-off is unacceptable, disable SHARED_INTAKE_TOKEN and use
+ * the admin UI or POST /api/v1/intake with a Bearer header instead.
+ */
 export function getSharedIntakeUrl(serviceName?: string) {
   const token = getSharedIntakeToken();
 

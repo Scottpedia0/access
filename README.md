@@ -50,13 +50,15 @@ You put every credential in it — API keys, OAuth tokens, bot tokens, agent cre
 ## 30-second example
 
 ```bash
+# Set once per session (don't paste tokens directly in commands)
+export TOKEN="your-token"
+export ACCESS="https://your-access-instance"
+
 # Your agent searches Gmail through Access
-curl -H "Authorization: Bearer $TOKEN" \
-  "https://your-access-instance/api/v1/google/gmail?action=search&q=from:alice&account=work"
+curl -H "Authorization: Bearer $TOKEN" "$ACCESS/api/v1/google/gmail?action=search&q=from:alice&account=work"
 
 # Or bootstraps an entire session in one call
-curl -H "Authorization: Bearer $TOKEN" \
-  "https://your-access-instance/api/v1/bootstrap"
+curl -H "Authorization: Bearer $TOKEN" "$ACCESS/api/v1/bootstrap"
 ```
 
 With MCP, your agent gets tools like `gmail_search`, `calendar_list`, `drive_list` — no configuration per service, no expired tokens, no credential management.

@@ -60,8 +60,11 @@ npm run db:deploy    # Apply migrations
 Your credentials are managed by Access. Do NOT store API keys in .env files or hardcode them.
 
 ### Bootstrap a session
-Pull all authorized credentials and context in one call:
+Pull all authorized credentials and context in one call. Use env vars — avoid pasting tokens directly in shell commands (they end up in shell history):
 ```
+export GLOBAL_AGENT_TOKEN="your-token"
+export ACCESS_BASE_URL="https://your-instance"
+
 curl -H "Authorization: Bearer $GLOBAL_AGENT_TOKEN" \
   "$ACCESS_BASE_URL/api/v1/bootstrap"
 ```
